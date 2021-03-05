@@ -8,7 +8,7 @@ int main(int argc, char **argv, char **envp)
         return 1;
     }
 
-    if (strlen(argv[1]) < 3)
+    if (strlen(argv[1]) < 3 || strlen(argv[1]) > 5)
     {
         printf("ERROR: Invalid MODE format. Should be <u|g|o|a><-|+|=><rwx>\n");
         return 1;
@@ -34,7 +34,7 @@ int main(int argc, char **argv, char **envp)
         break;
 
     default:
-        printf("ERROR: Invalid user type. Should be one of <u|g|o|a>.");
+        printf("ERROR: Invalid user type. Should be one of <u|g|o|a>.\n");
         return 1;
         break;
     }
@@ -55,33 +55,34 @@ int main(int argc, char **argv, char **envp)
         break;
 
     default:
-        printf("ERROR: Invalid permission mode. Should be one of <-|+|=>.");
+        printf("ERROR: Invalid permission mode. Should be one of <-|+|=>.\n");
         return 1;
         break;
     }
 
     // MODE: permission type
-    char perm[3];
-    strncpy(perm, argv[1] + 2, 3);
-    if (strlen(argv[1]) > 5 || (strchr(perm, 'r') == NULL && strchr(perm, 'w') == NULL && strchr(perm, 'x') == NULL))
+    for (int i = 2; i < strlen(argv[1]); i++)
     {
-        printf("ERROR: Invalid permission type. Should be at least one of <rwx>.\n");
-        return 1;
-    }
-    if (strchr(perm, 'r') != NULL)
-    {
-        printf("Read\n");
-    }
-    if (strchr(perm, 'w') != NULL)
-    {
-        printf("Write\n");
-    }
-    if (strchr(perm, 'x') != NULL)
-    {
-        printf("Execute\n");
-    }
+        switch (argv[1][i])
+        {
+        case 'r':
+            printf("Read\n");
+            break;
 
-    //TODO: Check for invalid chars outside of rwx
+        case 'w':
+            printf("Write\n");
+            break;
+
+        case 'x':
+            printf("Execute\n");
+            break;
+
+        default:
+            printf("ERROR: Invalid permission type. Should be at least one of <rwx>.\n");
+            return 1;
+            break;
+        }
+    }
 
     return 0;
 }
