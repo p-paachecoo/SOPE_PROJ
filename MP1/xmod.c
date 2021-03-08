@@ -1,6 +1,7 @@
 #include "xmod.h"
 
 FILE *f_ptr;
+clock_t start, stop;
 
 void print_int(double instant, pid_t pid, char event[], int info) {
     fprintf(f_ptr, "%f – %d – %s – %i\n", fabs(instant), pid, event, info);
@@ -216,6 +217,17 @@ int make_command_from_octal_mode(char *mode, unsigned int *command) {
 }
 
 int main(int argc, char **argv, char **envp) {
+    start = clock() / CLOCKS_PER_SEC;
+
+    if ((f_ptr = fopen(getenv("LOG_FILENAME"), "a")) == NULL) {
+        printf("Error on opening register file. Set LOG_FILENAME.\n");
+        stop = clock() / CLOCKS_PER_SEC;
+        double elapsed_time = (double)(stop - start);
+        pid_t pid = getpid();
+        print_int(elapsed_time, pid, "EXIT", 1);
+        exit(1);
+    }
+
     if (argc < 3) {
         printf("Usage:\nxmod [OPTIONS] MODE FILE/DIR\n");
         printf("xmod [OPTIONS] OCTAL-MODE FILE/DIR\n");
