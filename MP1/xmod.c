@@ -1,5 +1,19 @@
 #include "xmod.h"
 
+FILE *f_ptr;
+
+void print_int(double instant, pid_t pid, char event[], int info) {
+    fprintf(f_ptr, "%f – %d – %s – %i\n", fabs(instant), pid, event, info);
+}
+
+void print_str(double instant, pid_t pid, char event[], char info[]) {
+    fprintf(f_ptr, "%f ; %d ; %s ; %s\n", fabs(instant), pid, event, info);
+}
+
+void end_sig_print(pid_t pid, char file_dir[], int nftot, int nfmod) {
+    printf("%d ; %s ; %i ; %i\n", pid, file_dir, nftot, nfmod);
+}
+
 int make_command_from_text_mode(char *mode, unsigned int *command) {
     user_type user_t;
     permission_mode perm_mode;

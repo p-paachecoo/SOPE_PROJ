@@ -4,14 +4,13 @@
 /*
 Necessary includes
 */
-bla bla bla
-
 #include <ctype.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <types.h>
 
 typedef enum {
     OWNER,
@@ -33,8 +32,20 @@ typedef struct {
 } permission_type;
 
 /*
-Responsible for handling the SIGINT signal.
+* Info printing for integers
+* ie: PROC_EXIT and SIGNAL_RECV
 */
-void sigint_handler(int signumber);
+void print_int(double instant, pid_t pid, char event[], int info);
+
+/*
+* Info printing for sentences
+* ie: PROC_CREAT , SIGNAL_SENT and FILE_MODF
+*/
+void print_str(double instant, pid_t pid, char event[], char info[]);
+
+/*
+* Print function when SIGINT is received
+*/
+void end_sig_print(pid_t pid, char file_dir[], int nftot, int nfmod);
 
 #endif  // MP1_XMOD_H_
