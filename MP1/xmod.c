@@ -228,6 +228,12 @@ int main(int argc, char **argv, char **envp) {
         exit(1);
     }
 
+    stop = clock() / CLOCKS_PER_SEC;
+    double elapsed_time = (double)(stop - start);
+    pid_t pid = getpid();
+    print_int(elapsed_time, pid, "EXIT", 0);
+    fclose(f_ptr);
+
     if (argc < 3) {
         printf("Usage:\nxmod [OPTIONS] MODE FILE/DIR\n");
         printf("xmod [OPTIONS] OCTAL-MODE FILE/DIR\n");
