@@ -208,14 +208,29 @@ int main(int argc, char **argv, char **envp) {
         return -1;
     }
 
-    if (strlen(argv[1]) < 3 || strlen(argv[1]) > 5) {
+    size_t mode_idx = 1;
+
+    while (argv[mode_idx][0] == '-') {
+        /* fazer aqui o parsing das options
+         switch(argv[mode_idx][1]) {
+             case v:
+             ...
+             case c:
+             ...
+             case R:
+             ...
+         }*/
+        mode_idx++;
+    }
+
+    if (strlen(argv[mode_idx]) < 3 || strlen(argv[mode_idx]) > 5) {
         printf("ERROR: Invalid MODE format. ");
         printf("Should be <u|g|o|a><-|+|=><rwx> or <-|+|=><0-7><0-7><0-7>\n");
         return -1;
     }
 
     struct stat buffer;
-    if (stat(argv[2], &buffer) != 0) {
+    if (stat(argv[mode_idx + 1], &buffer) != 0) {
         perror("ERROR");
         return -1;
     }
@@ -225,17 +240,17 @@ int main(int argc, char **argv, char **envp) {
 
     unsigned int command = curr_perm;
 
-    if (isdigit(argv[1][0])) {
-        if (make_command_from_octal_mode(argv[1], &command) != 0) {
+    if (isdigit(argv[mode_idx][0])) {
+        if (make_command_from_octal_mode(argv[mode_idx], &command) != 0) {
             return -1;
         }
     } else {
-        if (make_command_from_text_mode(argv[1], &command) != 0) {
+        if (make_command_from_text_mode(argv[mode_idx], &command) != 0) {
             return -1;
         }
     }
 
-    if (chmod(argv[2], command) != 0) {
+    if (chmod(argv[mode_idx + 1], command) != 0) {
         perror("chmod() error");
         return -1;
     }
