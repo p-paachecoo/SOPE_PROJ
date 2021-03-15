@@ -25,6 +25,20 @@ void sigint_handler(int signumber)
   }
 }
 
+FILE *f_ptr;
+clock_t start, stop;
+
+void print_int(double instant, pid_t pid, char event[], int info) {
+    fprintf(f_ptr, "%f – %d – %s – %i\n", fabs(instant), pid, event, info);
+}
+
+void print_str(double instant, pid_t pid, char event[], char info[]) {
+    fprintf(f_ptr, "%f ; %d ; %s ; %s\n", fabs(instant), pid, event, info);
+}
+
+void end_sig_print(pid_t pid, char file_dir[], int nftot, int nfmod) {
+    printf("%d ; %s ; %i ; %i\n", pid, file_dir, nftot, nfmod);
+}
 
 int make_command_from_text_mode(char *mode, unsigned int *command) {
     user_type user_t;
@@ -228,12 +242,30 @@ int make_command_from_octal_mode(char *mode, unsigned int *command) {
 }
 
 int main(int argc, char **argv, char **envp) {
+    start = clock() / CLOCKS_PER_SEC;
+
+    if ((f_ptr = fopen(getenv("LOG_FILENAME"), "a")) == NULL) {
+        printf("Error on opening register file. Set LOG_FILENAME.\n");
+        stop = clock() / CLOCKS_PER_SEC;
+        double elapsed_time = (double)(stop - start);
+        pid_t pid = getpid();
+        print_int(elapsed_time, pid, "EXIT", 1);
+        exit(1);
+    }
+
+    stop = clock() / CLOCKS_PER_SEC;
+    double elapsed_time = (double)(stop - start);
+    pid_t pid = getpid();
+    print_int(elapsed_time, pid, "EXIT", 0);
+    fclose(f_ptr);
+
     if (argc < 3) {
         printf("Usage:\nxmod [OPTIONS] MODE FILE/DIR\n");
         printf("xmod [OPTIONS] OCTAL-MODE FILE/DIR\n");
         return -1;
     }
 
+    //SIGNAL 
     signal(SIGINT, sigint_handler);
     struct sigaction new, old;
     sigset_t smask;                // defines signals to block while func() is running            // prepare struct sigaction

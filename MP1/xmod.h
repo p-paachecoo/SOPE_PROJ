@@ -16,6 +16,8 @@ Necessary includes
 #include <string.h>
 #include <ctype.h>
 #include <stdbool.h>
+#include <time.h>
+#include <types.h>
 
 #define SIGHUP  1   /* Hangup the process */ 
 #define SIGINT  2   /* Interrupt the process */ 
@@ -45,8 +47,20 @@ typedef struct {
 
 
 /*
-Responsible for handling the SIGINT signal.
+* Info printing for integers
+* ie: PROC_EXIT and SIGNAL_RECV
 */
-void sigint_handler(int signumber);
+void print_int(double instant, pid_t pid, char event[], int info);
+
+/*
+* Info printing for sentences
+* ie: PROC_CREAT , SIGNAL_SENT and FILE_MODF
+*/
+void print_str(double instant, pid_t pid, char event[], char info[]);
+
+/*
+* Print function when SIGINT is received
+*/
+void end_sig_print(pid_t pid, char file_dir[], int nftot, int nfmod);
 
 #endif  // MP1_XMOD_H_
