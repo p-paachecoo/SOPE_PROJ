@@ -1,5 +1,31 @@
 #include "xmod.h"
 
+void sigint_handler(int signumber)
+{
+  fprintf(stderr, "\nReceived signal %d!\n", signumber);
+
+  char answer;
+  int cicle = 0;
+  printf("Should the program terminate? (y/n)\n");
+  while (cicle == 0)
+  {
+    answer = getchar();
+    if (answer == 'y')
+    {
+      printf("Terminated\n");
+      cicle = 1;
+      exit(0);
+    }
+    else if (answer == 'n')
+    {
+      printf("Execution resumed\n");
+      cicle = 1;
+      return;
+    }
+  }
+}
+
+
 int make_command_from_text_mode(char *mode, unsigned int *command) {
     user_type user_t;
     permission_mode perm_mode;
@@ -207,6 +233,18 @@ int main(int argc, char **argv, char **envp) {
         printf("xmod [OPTIONS] OCTAL-MODE FILE/DIR\n");
         return -1;
     }
+
+    signal(SIGINT, sigint_handler);
+    struct sigaction new, old;
+    sigset_t smask;                // defines signals to block while func() is running            // prepare struct sigaction
+    if (sigemptyset(&smask) == -1) // block no signal
+      perror("sigsetfunctions");
+
+    new.sa_handler = sigint_handler;
+    new.sa_mask = smask;
+    new.sa_flags = 0; // usually works            if(sigaction(SIGUSR1, &new, &old) == -1)
+    if (sigaction(SIGUSR1, &new, &old) == -1)
+      perror("sigaction");
 
     size_t mode_idx = 1;
 
