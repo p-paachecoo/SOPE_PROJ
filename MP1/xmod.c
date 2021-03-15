@@ -277,6 +277,7 @@ int main(int argc, char **argv, char **envp) {
     new.sa_flags = 0; // usually works            if(sigaction(SIGUSR1, &new, &old) == -1)
     if (sigaction(SIGUSR1, &new, &old) == -1)
       perror("sigaction");
+    
 
     size_t mode_idx = 1;
 

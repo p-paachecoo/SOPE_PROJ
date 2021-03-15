@@ -10,14 +10,19 @@ Necessary includes
 #include <sys/types.h>
 #include <unistd.h>
 #undef _POSIX_SOURCE
+#include <ctype.h>
+#include <math.h>
+
+
 #include <stdio.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
-#include <stdbool.h>
+
+
 #include <time.h>
-#include <types.h>
+#include <unistd.h>
+#include <stdbool.h>
 
 #define SIGHUP  1   /* Hangup the process */ 
 #define SIGINT  2   /* Interrupt the process */ 
