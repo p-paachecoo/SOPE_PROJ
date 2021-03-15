@@ -12,9 +12,9 @@ void sigint_handler(int signumber)
 
   char answer;
   int cicle = 0;
+  printf("Should the program terminate? (y/n)\n");
   while (cicle == 0)
   {
-    printf("Should the program terminate? (y/n)\n");
     answer = getchar();
     if (answer == 'y')
     {
@@ -27,10 +27,6 @@ void sigint_handler(int signumber)
       printf("Execution resumed\n");
       cicle = 1;
       return;
-    }
-    else
-    {
-      printf("Invalid answer, please answer again (y/n).\n");
     }
   }
 }
