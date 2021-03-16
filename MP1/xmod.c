@@ -368,7 +368,7 @@ int changePermissionsOfFileDir(char *fileDir, char *permissions)
             perror("Error: Used -R option on a file instead of a Directory");
         //Fork and changePermissionsOfWholeDir of children
         fork();
-        //changePermissionsOfWholeDir(sonDir)
+        //changePermissionsOfWholeDir(fileDir)
     }
 
     if(changePermissionsOfFile(fileDir, permissions))
@@ -388,7 +388,8 @@ void changePermissionsOfWholeDir(char *Dir, char *permissions)
             //if a Dir is found, recursively fork and call iself
         }
             //parent only
-            changePermissionsOfFile(dp->d_name, permissions);
+            //changePermissionsOfFile(Path Until Here + dp->d_name, permissions);
+            //Path until here probably needs to be passed by parameter
     }
     (void)closedir(dirpath);
 
