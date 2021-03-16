@@ -23,6 +23,8 @@ Necessary includes
 #include <time.h>
 #include <unistd.h>
 #include <stdbool.h>
+#include<sys/wait.h>
+#include <dirent.h>
 
 #define SIGHUP  1   /* Hangup the process */ 
 #define SIGINT  2   /* Interrupt the process */ 
@@ -83,5 +85,9 @@ void end_sig_print(pid_t pid, char file_dir[], int nftot, int nfmod);
 int isDirectory(const char *path);
 
 int changePermissionsOfFileDir(char* fileDir, char* permissions);
+
+void changePermissionsOfWholeDir(char *Dir, char *permissions);
+
+int changePermissionsOfFile(char *file, char *permissions);
 
 #endif  // MP1_XMOD_H_

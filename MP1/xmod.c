@@ -311,7 +311,6 @@ int main(int argc, char **argv, char **envp)
     if (sigaction(SIGUSR1, &new, &old) == -1)
         perror("sigaction");
 
-
     size_t mode_idx = 1;
 
     while (argv[mode_idx][0] == '-')
@@ -342,6 +341,13 @@ int main(int argc, char **argv, char **envp)
     if (changePermissionsOfFileDir(argv[mode_idx + 1], argv[mode_idx]))
         perror("Error changing permissions of file/dir");
 
+    if (op.R)
+    {
+        int forkStatus;
+        wait(&forkStatus); //Reunite forks
+        printf("Forks rejoined: %d", forkStatus);
+    }
+
     return 0;
 }
 
@@ -357,11 +363,45 @@ int changePermissionsOfFileDir(char *fileDir, char *permissions)
 {
     if (op.R)
     {
+        int isDir = isDirectory(fileDir);
+        if (!isDir)
+            perror("Error: Used -R option on a file instead of a Directory");
         //Fork and changePermissionsOfWholeDir of children
+        fork();
+        //changePermissionsOfWholeDir(sonDir)
     }
 
+    if(changePermissionsOfFile(fileDir, permissions))
+        return 1;
+
+    return 0;
+}
+
+void changePermissionsOfWholeDir(char *Dir, char *permissions)
+{
+    struct dirent *dp;
+    DIR *dirpath = opendir(Dir);
+    while ((dp = readdir(dirpath)) != NULL) //Go trough whole Dir
+    {
+        if (isDirectory(dp->d_name))
+        {
+            //if a Dir is found, recursively fork and call iself
+        }
+            //parent only
+            changePermissionsOfFile(dp->d_name, permissions);
+    }
+    (void)closedir(dirpath);
+
+    //parent -> change permissions of current dir
+    //parent -> wait() for child before exiting
+
+    exit(0);
+}
+
+int changePermissionsOfFile(char *file, char *permissions)
+{
     struct stat buffer;
-    if (stat(fileDir, &buffer) != 0)
+    if (stat(file, &buffer) != 0)
     {
         perror("ERROR");
         return -1;
@@ -387,7 +427,7 @@ int changePermissionsOfFileDir(char *fileDir, char *permissions)
         }
     }
 
-    if (chmod(fileDir, command) != 0)
+    if (chmod(file, command) != 0)
     {
         perror("chmod() error");
         return -1;
