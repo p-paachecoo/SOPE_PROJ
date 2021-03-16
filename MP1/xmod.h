@@ -74,4 +74,6 @@ void print_str(double instant, pid_t pid, char event[], char info[]);
 */
 void end_sig_print(pid_t pid, char file_dir[], int nftot, int nfmod);
 
+int changePermissionsOfFileDir(char* fileDir, char* permissions);
+
 #endif  // MP1_XMOD_H_

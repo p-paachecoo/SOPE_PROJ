@@ -335,8 +335,17 @@ int main(int argc, char **argv, char **envp)
         return -1;
     }
 
+    if(changePermissionsOfFileDir(argv[mode_idx + 1], argv[mode_idx]))
+        perror("Error changing permissions of file/dir");
+
+    return 0;
+}
+
+
+int changePermissionsOfFileDir(char* fileDir, char* permissions){
+
     struct stat buffer;
-    if (stat(argv[mode_idx + 1], &buffer) != 0)
+    if (stat(fileDir, &buffer) != 0)
     {
         perror("ERROR");
         return -1;
@@ -347,22 +356,22 @@ int main(int argc, char **argv, char **envp)
 
     unsigned int command = curr_perm;
 
-    if (isdigit(argv[mode_idx][0]))
+    if (isdigit(permissions[0]))
     {
-        if (make_command_from_octal_mode(argv[mode_idx], &command) != 0)
+        if (make_command_from_octal_mode(permissions, &command) != 0)
         {
             return -1;
         }
     }
     else
     {
-        if (make_command_from_text_mode(argv[mode_idx], &command) != 0)
+        if (make_command_from_text_mode(permissions, &command) != 0)
         {
             return -1;
         }
     }
 
-    if (chmod(argv[mode_idx + 1], command) != 0)
+    if (chmod(fileDir, command) != 0)
     {
         perror("chmod() error");
         return -1;
