@@ -56,6 +56,12 @@ typedef struct {
     int totalMod;
 } sig_info;
 
+typedef struct {
+    bool R;
+    bool v;
+    bool c;
+} options;
+
 
 /*
 * Info printing for integers
@@ -73,6 +79,8 @@ void print_str(double instant, pid_t pid, char event[], char info[]);
 * Print function when SIGINT is received
 */
 void end_sig_print(pid_t pid, char file_dir[], int nftot, int nfmod);
+
+int isDirectory(const char *path);
 
 int changePermissionsOfFileDir(char* fileDir, char* permissions);
 

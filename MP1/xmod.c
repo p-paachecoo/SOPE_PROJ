@@ -9,7 +9,6 @@ void sigint_handler(int signumber)
     printf("%10s | %10s | %10s | %10s\n", "pid", "fich/dir", "nftot", "nfmod");
     printf("%10d | %10s | %10d | %10d\n", getpid(), info.originalFileDir, info.totalFiles, info.totalMod);
 
-
     char answer;
     int cicle = 0;
     printf("Should the program terminate? (y/n)\n");
@@ -270,6 +269,8 @@ int make_command_from_octal_mode(char *mode, unsigned int *command)
     return 0;
 }
 
+options op;
+
 int main(int argc, char **argv, char **envp)
 {
     start = clock() / CLOCKS_PER_SEC;
@@ -310,21 +311,24 @@ int main(int argc, char **argv, char **envp)
     if (sigaction(SIGUSR1, &new, &old) == -1)
         perror("sigaction");
 
-    pause();
 
     size_t mode_idx = 1;
 
     while (argv[mode_idx][0] == '-')
     {
-        /* fazer aqui o parsing das options
-         switch(argv[mode_idx][1]) {
-             case v:
-             ...
-             case c:
-             ...
-             case R:
-             ...
-         }*/
+        /* fazer aqui o parsing das options*/
+        switch (argv[mode_idx][1])
+        {
+        case 'v':
+            op.v = true;
+            break;
+        case 'c':
+            op.c = true;
+            break;
+        case 'R':
+            op.R = true;
+            break;
+        }
         mode_idx++;
     }
 
@@ -335,14 +339,26 @@ int main(int argc, char **argv, char **envp)
         return -1;
     }
 
-    if(changePermissionsOfFileDir(argv[mode_idx + 1], argv[mode_idx]))
+    if (changePermissionsOfFileDir(argv[mode_idx + 1], argv[mode_idx]))
         perror("Error changing permissions of file/dir");
 
     return 0;
 }
 
+int isDirectory(const char *path)
+{
+    struct stat statbuf;
+    if (stat(path, &statbuf) != 0)
+        return 0;
+    return S_ISDIR(statbuf.st_mode);
+}
 
-int changePermissionsOfFileDir(char* fileDir, char* permissions){
+int changePermissionsOfFileDir(char *fileDir, char *permissions)
+{
+    if (op.R)
+    {
+        //Fork and changePermissionsOfWholeDir of children
+    }
 
     struct stat buffer;
     if (stat(fileDir, &buffer) != 0)
