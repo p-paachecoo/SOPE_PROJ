@@ -341,13 +341,6 @@ int main(int argc, char **argv, char **envp)
     if (changePermissionsOfFileDir(argv[mode_idx + 1], argv[mode_idx]))
         perror("Error changing permissions of file/dir");
 
-    if (op.R)
-    {
-        int forkStatus;
-        wait(&forkStatus); //Reunite forks
-        printf("Forks rejoined: %d", forkStatus);
-    }
-
     return 0;
 }
 
@@ -368,11 +361,18 @@ int changePermissionsOfFileDir(char *fileDir, char *permissions)
             perror("Error: Used -R option on a file instead of a Directory");
         //Fork and changePermissionsOfWholeDir of children
         fork();
-        //changePermissionsOfWholeDir(fileDir)
+        //children -> changePermissionsOfWholeDir(fileDir)
     }
-
-    if(changePermissionsOfFile(fileDir, permissions))
+    //parent ->
+    if (changePermissionsOfFile(fileDir, permissions))
         return 1;
+
+    if (op.R)
+    {
+        int forkStatus;
+        wait(&forkStatus); //Reunite forks
+        printf("Forks rejoined: %d", forkStatus); //Check if all good
+    }
 
     return 0;
 }
@@ -387,14 +387,14 @@ void changePermissionsOfWholeDir(char *Dir, char *permissions)
         {
             //if a Dir is found, recursively fork and call iself
         }
-            //parent only
-            //changePermissionsOfFile(Path Until Here + dp->d_name, permissions);
-            //Path until here probably needs to be passed by parameter
+        //parent only
+        //changePermissionsOfFile(Path Until Here + dp->d_name, permissions);
+        //Path until here probably needs to be passed by parameter
     }
     (void)closedir(dirpath);
 
     //parent -> change permissions of current dir
-    //parent -> wait() for child before exiting
+    //parent -> wait() for child and check if all good before exiting
 
     exit(0);
 }
