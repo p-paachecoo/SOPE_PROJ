@@ -50,6 +50,12 @@ typedef struct {
     bool execute;
 } permission_type;
 
+typedef struct {
+    char* originalFileDir;
+    int totalFiles;
+    int totalMod;
+} sig_info;
+
 
 /*
 * Info printing for integers
