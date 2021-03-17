@@ -82,9 +82,11 @@ void print_str(double instant, pid_t pid, char event[], char info[]);
 */
 void end_sig_print(pid_t pid, char file_dir[], int nftot, int nfmod);
 
-void optionV_C_print_success(char name[], int octalMode, char rwxMode[]);
+void optionV_C_print_success(char name[], int octalModeFirst, char rwxModeFirst[], int octalModeAfter, char rwxModeAfter[]);
 
 void optionC_print_failure(char name[]);
+
+void optionV_print_failure(char name[], int octalModeFirst, char rwxModeFirst[], int octalModeAfter, char rwxModeAfter[]);
 
 int isDirectory(const char *path);
 

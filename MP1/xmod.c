@@ -362,7 +362,7 @@ int changePermissionsOfFile(char *file, char *permissions)
     return 0;
 }
 
-void optionV_C_print_success(char name[], int octalModeFirst, char rwxModeFirst[], int octalModeAfter, char rwxModeAfter)
+void optionV_C_print_success(char name[], int octalModeFirst, char rwxModeFirst[], int octalModeAfter, char rwxModeAfter[])
 {
     printf("%s %s %s %i %s %s %s %i %s %s", "mode of ´", name, "´ changed from ", octalModeFirst, " ", rwxModeFirst, " to ", octalModeAfter, " ", rwxModeAfter);
 }
@@ -370,6 +370,11 @@ void optionV_C_print_success(char name[], int octalModeFirst, char rwxModeFirst[
 void optionC_print_failure(char name[])
 {
     printf("%s %s %s", "xmod: cannot access ´", name, "´: No such file or directory");
+}
+
+void optionV_print_failure(char name[], int octalModeFirst, char rwxModeFirst[], int octalModeAfter, char rwxModeAfter[])
+{
+    printf("%s %s %s %s %s %s %i %s %s %s %i %s %s", "xmod: cannot access ´", name, "´ : No such file or directory\n ", "failed to change mode of ´", name, "´ from " octalModeFirst, " ", rwxModeFirst, " to ", octalModeAfter, " ", rwxModeAfter);
 }
 
 int main(int argc, char **argv, char **envp)
