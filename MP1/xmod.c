@@ -1,6 +1,9 @@
 #include "xmod.h"
 
 sig_info info;
+FILE *f_ptr;
+clock_t start, stop;
+options op;
 
 void sigint_handler(int signumber)
 {
@@ -29,9 +32,6 @@ void sigint_handler(int signumber)
         }
     }
 }
-
-FILE *f_ptr;
-clock_t start, stop;
 
 void print_int(double instant, pid_t pid, char event[], int info)
 {
@@ -269,81 +269,6 @@ int make_command_from_octal_mode(char *mode, unsigned int *command)
     return 0;
 }
 
-options op;
-
-int main(int argc, char **argv, char **envp)
-{
-    start = clock() / CLOCKS_PER_SEC;
-
-    if ((f_ptr = fopen(getenv("LOG_FILENAME"), "a")) == NULL)
-    {
-        printf("Error on opening register file. Set LOG_FILENAME.\n");
-        stop = clock() / CLOCKS_PER_SEC;
-        double elapsed_time = (double)(stop - start);
-        pid_t pid = getpid();
-        print_int(elapsed_time, pid, "EXIT", 1);
-        exit(1);
-    }
-
-    stop = clock() / CLOCKS_PER_SEC;
-    double elapsed_time = (double)(stop - start);
-    pid_t pid = getpid();
-    print_int(elapsed_time, pid, "EXIT", 0);
-    fclose(f_ptr);
-
-    if (argc < 3)
-    {
-        printf("Usage:\nxmod [OPTIONS] MODE FILE/DIR\n");
-        printf("xmod [OPTIONS] OCTAL-MODE FILE/DIR\n");
-        return -1;
-    }
-
-    //SIGNAL
-    signal(SIGINT, sigint_handler);
-    struct sigaction new, old;
-    sigset_t smask;                // defines signals to block while func() is running            // prepare struct sigaction
-    if (sigemptyset(&smask) == -1) // block no signal
-        perror("sigsetfunctions");
-
-    new.sa_handler = sigint_handler;
-    new.sa_mask = smask;
-    new.sa_flags = 0; // usually works            if(sigaction(SIGUSR1, &new, &old) == -1)
-    if (sigaction(SIGUSR1, &new, &old) == -1)
-        perror("sigaction");
-
-    size_t mode_idx = 1;
-
-    while (argv[mode_idx][0] == '-')
-    {
-        /* fazer aqui o parsing das options*/
-        switch (argv[mode_idx][1])
-        {
-        case 'v':
-            op.v = true;
-            break;
-        case 'c':
-            op.c = true;
-            break;
-        case 'R':
-            op.R = true;
-            break;
-        }
-        mode_idx++;
-    }
-
-    if (strlen(argv[mode_idx]) < 3 || strlen(argv[mode_idx]) > 5)
-    {
-        printf("ERROR: Invalid MODE format. ");
-        printf("Should be <u|g|o|a><-|+|=><rwx> or <-|+|=><0-7><0-7><0-7>\n");
-        return -1;
-    }
-
-    if (changePermissionsOfFileDir(argv[mode_idx + 1], argv[mode_idx]))
-        perror("Error changing permissions of file/dir");
-
-    return 0;
-}
-
 int isDirectory(const char *path)
 {
     struct stat statbuf;
@@ -436,3 +361,102 @@ int changePermissionsOfFile(char *file, char *permissions)
 
     return 0;
 }
+
+void optionV_C_print_success(char name[], int octalModeFirst, char rwxModeFirst[], int octalModeAfter, char rwxModeAfter)
+{
+    printf("%s %s %s %i %s %s %s %i %s %s", "mode of ´", name, "´ changed from ", octalModeFirst, " ", rwxModeFirst, " to ", octalModeAfter, " ", rwxModeAfter);
+}
+
+void optionC_print_failure(char name[])
+{
+    printf("%s %s %s", "xmod: cannot access ´", name, "´: No such file or directory");
+}
+
+int main(int argc, char **argv, char **envp)
+{
+    start = clock();
+
+    if ((f_ptr = fopen(getenv("LOG_FILENAME"), "a")) == NULL)
+    {
+        printf("Error on opening register file. Set LOG_FILENAME.\n");
+        stop = clock();
+        double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+        pid_t pid = getpid();
+        print_int(elapsed_time, pid, "EXIT", 1);
+        exit(1);
+    }
+
+    if (argc < 3)
+    {
+        printf("Usage:\nxmod [OPTIONS] MODE FILE/DIR\n");
+        printf("xmod [OPTIONS] OCTAL-MODE FILE/DIR\n");
+        stop = clock();
+        double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;;
+        pid_t pid = getpid();
+        print_int(elapsed_time, pid, "EXIT", 1);
+        return -1;
+    }
+
+    //SIGNAL
+    signal(SIGINT, sigint_handler);
+    struct sigaction new, old;
+    sigset_t smask;              // defines signals to block while func() is running            // prepare struct sigaction
+    
+    if (sigemptyset(&smask) == -1) // block no signal
+        perror("sigsetfunctions");
+
+    
+    
+    new.sa_handler = sigint_handler;
+    new.sa_mask = smask;
+    new.sa_flags = 0; // usually works            if(sigaction(SIGUSR1, &new, &old) == -1)
+    
+    if (sigaction(SIGUSR1, &new, &old) == -1)
+        perror("sigaction");
+
+    
+    size_t mode_idx = 1;
+
+    while (argv[mode_idx][0] == '-')
+    {
+        /* fazer aqui o parsing das options*/
+        switch (argv[mode_idx][1])
+        {
+        case 'v':
+            op.v = true;
+            break;
+        case 'c':
+            op.c = true;
+            break;
+        case 'R':
+            op.R = true;
+            break;
+        }
+        mode_idx++;
+    }
+
+    if (strlen(argv[mode_idx]) < 3 || strlen(argv[mode_idx]) > 5)
+    {
+        printf("ERROR: Invalid MODE format. ");
+        printf("Should be <u|g|o|a><-|+|=><rwx> or <-|+|=><0-7><0-7><0-7>\n");
+
+        stop = clock();
+        double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;;
+        pid_t pid = getpid();
+        print_int(elapsed_time, pid, "EXIT", 1);
+        return -1;
+    }
+
+    if (changePermissionsOfFileDir(argv[mode_idx + 1], argv[mode_idx]))
+        perror("Error changing permissions of file/dir");
+
+    return 0;
+
+    stop = clock();
+    double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;;
+    pid_t pid = getpid();
+    print_int(elapsed_time, pid, "EXIT", 0);
+    fclose(f_ptr);
+}
+
+
