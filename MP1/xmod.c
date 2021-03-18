@@ -8,6 +8,11 @@ bool fileopen = false;
 
 void sigint_handler(int signumber)
 {
+    stop = clock();
+    double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+    pid_t pid = getpid();
+    end_sig_print(elapsed_time, pid, "SIGNAL_RECV", signumber);
+
     fprintf(stderr, "\nReceived signal %d!\n", signumber);
 
     printf("%10s | %10s | %10s | %10s\n", "pid", "fich/dir", "nftot", "nfmod");
@@ -24,14 +29,12 @@ void sigint_handler(int signumber)
         {
             printf("Terminated\n");
             cicle = 1;
-            if(fileopen == true) end_sig_print(getpid(), info.originalFileDir, info.totalFiles, info.totalMod);
             exit(0);
         }
         else if (answer == 'n')
         {
             printf("Execution resumed\n");
             cicle = 1;
-            if(fileopen == true) end_sig_print(getpid(), info.originalFileDir, info.totalFiles, info.totalMod);
             return;
         }
     }
@@ -47,9 +50,9 @@ void print_str(double instant, pid_t pid, char event[], char info[])
     if(fileopen == true) fprintf(f_ptr, "%f ; %d ; %s ; %s\n", fabs(instant), pid, event, info);
 }
 
-void end_sig_print(pid_t pid, char file_dir[], int nftot, int nfmod)
+void end_sig_print(double instant, pid_t pid, char event[], char info[])
 {
-    if(fileopen == true) fprintf(f_ptr,"%d ; %s ; %i ; %i\n", pid, file_dir, nftot, nfmod);
+    if(fileopen == true) fprintf(f_ptr,"%d ; %s ; %s ; %s\n", instant, pid, event, info);
 }
 
 int make_command_from_text_mode(char *mode, unsigned int *command)
@@ -80,6 +83,10 @@ int make_command_from_text_mode(char *mode, unsigned int *command)
     default:
         printf("ERROR: Invalid user type. ");
         printf("Should be one of <u|g|o|a>.\n");
+        stop = clock();
+        double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+        pid_t pid = getpid();
+        print_int(elapsed_time, pid, "ERROR", 1);
         return -1;
         break;
     }
@@ -265,6 +272,10 @@ int make_command_from_octal_mode(char *mode, unsigned int *command)
     {
         printf("ERROR: Invalid octal number. ");
         printf("Should be a 4-digit number starting with 0.\n");
+        stop = clock();
+        double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+        pid_t pid = getpid();
+        print_int(elapsed_time, pid, "ERROR", 1);
         return -1;
     }
 
@@ -399,8 +410,18 @@ int changePermissionsOfFile(char *file, char *permissions)
     {
         if (op.v)
             optionV_print_failure(file, 0, 0);
+            stop = clock();
+            double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+            pid_t pid = getpid();
+            print_int(elapsed_time, pid, "ERROR", 1);
+    
         else if (op.c)
             optionC_print_failure(file);
+            stop = clock();
+            double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+            pid_t pid = getpid();
+            print_int(elapsed_time, pid, "ERROR", 1);
+
         return -1;
     }
 
@@ -413,6 +434,10 @@ int changePermissionsOfFile(char *file, char *permissions)
     {
         if (make_command_from_octal_mode(permissions, &command) != 0)
         {
+            stop = clock();
+            double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+            pid_t pid = getpid();
+            print_int(elapsed_time, pid, "ERROR", 1);
             return -1;
         }
     }
@@ -420,6 +445,10 @@ int changePermissionsOfFile(char *file, char *permissions)
     {
         if (make_command_from_text_mode(permissions, &command) != 0)
         {
+            stop = clock();
+            double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+            pid_t pid = getpid();
+            print_int(elapsed_time, pid, "ERROR", 1);
             return -1;
         }
     }
@@ -427,23 +456,39 @@ int changePermissionsOfFile(char *file, char *permissions)
     if (chmod(file, command) != 0)
     {
         perror("chmod() error");
-        if (op.v)
+        if (op.v){
             optionV_print_failure(file, curr_perm, command);
-        else if (op.c)
+            stop = clock();
+            double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+            pid_t pid = getpid();
+            print_int(elapsed_time, pid, "ERROR", 1);
+        }
+        else if (op.c){
             optionC_print_failure(file);
+            stop = clock();
+            double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+            pid_t pid = getpid();
+            print_int(elapsed_time, pid, "ERROR", 1);
+        }
         return -1;
     }
     else
     {
-        if (op.v || op.c)
+        if (op.v || op.c){
             optionV_C_print_success(file, curr_perm, command);
+            char inf[33];
+            sprintf(inf, "%s : %04o : %04o", file, curr_perm, command);
+            stop = clock();
+            double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+            pid_t pid = getpid();
+            print_str(elapsed_time, pid, "FILE_MODF", inf);
+        }
     }
 
     return 0;
 }
 
-void optionV_C_print_success(char *filename, unsigned int octalModePrevious,
-                             unsigned int octalModeAfter)
+void optionV_C_print_success(char *filename, unsigned int octalModePrevious, unsigned int octalModeAfter)
 {
     char rwxModePrevious[10], rwxModeAfter[10];
     rwxModePrevious[9] = '\0';
@@ -464,8 +509,7 @@ void optionC_print_failure(char *filename)
     printf("xmod: cannot access '%s': No such file or directory\n", filename);
 }
 
-void optionV_print_failure(char *filename, unsigned int octalModePrevious,
-                           unsigned int octalModeAfter)
+void optionV_print_failure(char *filename, unsigned int octalModePrevious, unsigned int octalModeAfter)
 {
     char rwxModePrevious[10], rwxModeAfter[10];
     rwxModePrevious[9] = '\0';
