@@ -74,7 +74,7 @@ void print_str(double instant, pid_t pid, char event[], char info[]);
 /*
 * Print function when SIGINT is received
 */
-void end_sig_print(pid_t pid, char file_dir[], int nftot, int nfmod);
+void end_sig_print(double instant, pid_t pid, char event[], char info[]);
 
 void optionV_C_print_success(char *filename, unsigned int octalModePrevious,
                              unsigned int octalModeAfter);
