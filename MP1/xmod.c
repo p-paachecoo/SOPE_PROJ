@@ -4,6 +4,7 @@ sig_info info;
 FILE *f_ptr;
 clock_t start, stop;
 options op;
+bool fileopen = false;
 
 void sigint_handler(int signumber)
 {
@@ -23,12 +24,14 @@ void sigint_handler(int signumber)
         {
             printf("Terminated\n");
             cicle = 1;
+            if(fileopen == true) end_sig_print(getpid(), info.originalFileDir, info.totalFiles, info.totalMod);
             exit(0);
         }
         else if (answer == 'n')
         {
             printf("Execution resumed\n");
             cicle = 1;
+            if(fileopen == true) end_sig_print(getpid(), info.originalFileDir, info.totalFiles, info.totalMod);
             return;
         }
     }
@@ -36,17 +39,17 @@ void sigint_handler(int signumber)
 
 void print_int(double instant, pid_t pid, char event[], int info)
 {
-    fprintf(f_ptr, "%f – %d – %s – %i\n", fabs(instant), pid, event, info);
+    if(fileopen == true) fprintf(f_ptr, "%f – %d – %s – %i\n", fabs(instant), pid, event, info);
 }
 
 void print_str(double instant, pid_t pid, char event[], char info[])
 {
-    fprintf(f_ptr, "%f ; %d ; %s ; %s\n", fabs(instant), pid, event, info);
+    if(fileopen == true) fprintf(f_ptr, "%f ; %d ; %s ; %s\n", fabs(instant), pid, event, info);
 }
 
 void end_sig_print(pid_t pid, char file_dir[], int nftot, int nfmod)
 {
-    printf("%d ; %s ; %i ; %i\n", pid, file_dir, nftot, nfmod);
+    if(fileopen == true) fprintf(f_ptr,"%d ; %s ; %i ; %i\n", pid, file_dir, nftot, nfmod);
 }
 
 int make_command_from_text_mode(char *mode, unsigned int *command)
@@ -479,11 +482,14 @@ int main(int argc, char **argv, char **envp)
 {
     start = clock();
 
-    if ((f_ptr = fopen(getenv("LOG_FILENAME"), "a")) == NULL)
+    if ((f_ptr = fopen(getenv("LOG_FILENAME"), "w")) == NULL)
     {
-        printf("No LOG_FILENAME setted. No logs will be registered");
+        printf("No LOG_FILENAME setted. No logs will be registered\n");
     }
-
+    else {
+        f_ptr = fopen(getenv("LOG_FILENAME"), "w");
+    }
+    
     if (argc < 3)
     {
         printf("Usage:\nxmod [OPTIONS] MODE FILE/DIR\n");
@@ -491,7 +497,7 @@ int main(int argc, char **argv, char **envp)
         stop = clock();
         double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
         pid_t pid = getpid();
-        print_int(elapsed_time, pid, "EXIT", 1);
+        print_int(elapsed_time, pid, "ERROR", 1);
         return -1;
     }
 
@@ -538,17 +544,20 @@ int main(int argc, char **argv, char **envp)
         stop = clock();
         double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
         pid_t pid = getpid();
-        print_int(elapsed_time, pid, "EXIT", 1);
+        print_int(elapsed_time, pid, "ERROR", 1);
         return -1;
     }
 
     changePermissionsOfFileDir(argv[mode_idx + 1], argv[mode_idx]);
 
+    pause();
+
     stop = clock();
     double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
     pid_t pid = getpid();
     print_int(elapsed_time, pid, "EXIT", 0);
-    fclose(f_ptr);
+    
+    if(fileopen == true) fclose(f_ptr);
 
     return 0;
 }
