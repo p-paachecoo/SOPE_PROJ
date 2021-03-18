@@ -350,7 +350,10 @@ void changePermissionsOfWholeDir(char *Dir, char *permissions) {
 int changePermissionsOfFile(char *file, char *permissions) {
     struct stat buffer;
     if (stat(file, &buffer) != 0) {
-        printf("xmod: cannot access '%s': No such file or directory\n", file);
+        if (op.v)
+            optionV_print_failure(file, 0, 0);
+        else if (op.c)
+            optionC_print_failure(file);
         return -1;
     }
 
@@ -391,8 +394,13 @@ void optionV_C_print_success(char *filename, unsigned int octalModePrevious,
     rwxModeAfter[9] = '\0';
     octal_to_text(octalModePrevious, rwxModePrevious);
     octal_to_text(octalModeAfter, rwxModeAfter);
-    printf("mode of '%s' changed from %04o (%s) to %04o (%s)\n", filename,
-           octalModePrevious, rwxModePrevious, octalModeAfter, rwxModeAfter);
+    if (octalModePrevious != octalModeAfter)
+        printf("mode of '%s' changed from %04o (%s) to %04o (%s)\n",
+               filename, octalModePrevious, rwxModePrevious, octalModeAfter,
+               rwxModeAfter);
+    else if (op.v)
+        printf("mode of '%s' retained as %04o (%s)\n", filename,
+               octalModePrevious, rwxModePrevious);
 }
 
 void optionC_print_failure(char *filename) {
@@ -407,8 +415,9 @@ void optionV_print_failure(char *filename, unsigned int octalModePrevious,
     octal_to_text(octalModePrevious, rwxModePrevious);
     octal_to_text(octalModeAfter, rwxModeAfter);
     printf("xmod: cannot access '%s': No such file or directory\n", filename);
-    printf("failed to change mode of '%s' from %o (%s) to %o (%s)\n",
-           filename, octalModePrevious, rwxModePrevious, octalModeAfter, rwxModeAfter);
+    printf("failed to change mode of '%s' from %04o (%s) to %04o (%s)\n",
+           filename, octalModePrevious, rwxModePrevious, octalModeAfter,
+           rwxModeAfter);
 }
 
 int main(int argc, char **argv, char **envp) {
@@ -477,8 +486,7 @@ int main(int argc, char **argv, char **envp) {
         return -1;
     }
 
-    if (changePermissionsOfFileDir(argv[mode_idx + 1], argv[mode_idx]))
-        perror("Error changing permissions of file/dir");
+    changePermissionsOfFileDir(argv[mode_idx + 1], argv[mode_idx]);
 
     stop = clock();
     double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
