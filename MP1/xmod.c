@@ -418,17 +418,17 @@ void changePermissionsOfWholeDir(char *Dir, char **argv)
 
             printf("\n");
 
-            // if (fork() == 0)
-            // {
-            //     printf("Calling xmod on: %s\n", newArgv[fileNamepos]);
-            //     if (execve("./xmod", newArgv, NULL) == -1)
-            //     {
-            //         //printf("returned -1 on execve, value of error: %d and content: %s\n", errno, strerror(errno));
-            //         printf("returned -1 on execve, value of error: %d\n", errno);
-            //     }
-            //     printf("should not have reached here2222\n");
-            //     exit(0);
-            // }
+            if (fork() == 0)
+            {
+                printf("Calling xmod on: %s\n", newArgv[fileNamepos]);
+                if (execve("./xmod", newArgv, NULL) == -1)
+                {
+                    //printf("returned -1 on execve, value of error: %d and content: %s\n", errno, strerror(errno));
+                    printf("returned -1 on execve, value of error: %d\n", errno);
+                }
+                printf("should not have reached here2222\n");
+                exit(0);
+            }
         }
         // parent simply continues
     }
