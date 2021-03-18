@@ -424,12 +424,7 @@ int main(int argc, char **argv, char **envp) {
     start = clock();
 
     if ((f_ptr = fopen(getenv("LOG_FILENAME"), "a")) == NULL) {
-        printf("Error on opening register file. Set LOG_FILENAME.\n");
-        stop = clock();
-        double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
-        pid_t pid = getpid();
-        print_int(elapsed_time, pid, "EXIT", 1);
-        exit(1);
+        printf("No LOG_FILENAME setted. No logs will be registered");
     }
 
     if (argc < 3) {
