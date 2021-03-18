@@ -5,6 +5,7 @@ FILE *f_ptr;
 clock_t start, stop;
 options op;
 int fileNamepos;
+int argvSize;
 extern int errno;
 
 char *concat(const char *s1, const char *s2)
@@ -359,9 +360,8 @@ int changePermissionsOfFileDir(char *fileDir, char *permissions, char **argv)
 
             if (fork() == 0)
             { // children -> changePermissionsOfWholeDir(fileDir)
-            printf("NewArgs: %s","ola");
                 printf("Changing permissions of whole Dir: %s\n", fileDir);
-                
+
                 changePermissionsOfWholeDir(fileDir, argv);
                 printf("should not have reached here\n");
                 exit(0);
@@ -387,40 +387,48 @@ void changePermissionsOfWholeDir(char *Dir, char **argv)
     struct dirent *dp;
     DIR *dirpath = opendir(Dir);
     int contentInDir = 0;
-    
+
     while ((dp = readdir(dirpath)) != NULL)
     { // Go trough whole Dir recursively fork and call iself with exec with new path (Dir+dp->d_name)
 
         if ((dp->d_name != NULL) && (strcmp(dp->d_name, "..") != 0) && (strcmp(dp->d_name, ".") != 0))
         {
-            
+
             contentInDir = 1;
             char *newPathTemp = concat(Dir, "/");
             char *newPath = concat(newPathTemp, dp->d_name);
-            char **newArgv;
-            
-            memcpy(newArgv, argv, sizeof(*argv));
-            newArgv[fileNamepos] = newPath;
+            char *newArgv[argvSize];
 
-            printf("NewArgs: ");
-            for (int i = 0; i < sizeof(newArgv) / sizeof(char); i++)
+
+            printf("NewArgs: %d", fileNamepos);
+            for (int i = 0; i < argvSize; i++)
             {
+                if (newArgv[i] == NULL)
+                {
+                    break;
+                }
+                if (i == fileNamepos)
+                    newArgv[i] = newPath;
+                else
+                {
+                    newArgv[i] = argv[i];
+                }
                 printf("%s, ", newArgv[i]);
             }
 
             printf("\n");
 
-            if (fork() == 0)
-            {
-                printf("Calling xmod on: %s\n", newArgv[fileNamepos]);
-                if (execve("./xmod", newArgv, NULL) == -1)
-                {
-                    //printf("returned -1 on execve, value of error: %d and content: %s\n", errno, strerror(errno));
-                    printf("returned -1 on execve, value of error: %d\n", errno);
-                }
-                printf("should not have reached here2222\n");
-                exit(0);
-            }
+            // if (fork() == 0)
+            // {
+            //     printf("Calling xmod on: %s\n", newArgv[fileNamepos]);
+            //     if (execve("./xmod", newArgv, NULL) == -1)
+            //     {
+            //         //printf("returned -1 on execve, value of error: %d and content: %s\n", errno, strerror(errno));
+            //         printf("returned -1 on execve, value of error: %d\n", errno);
+            //     }
+            //     printf("should not have reached here2222\n");
+            //     exit(0);
+            // }
         }
         // parent simply continues
     }
@@ -545,9 +553,15 @@ int main(int argc, char **argv, char **envp)
     }
 
     printf("Args: ");
+    argvSize = 0;
     for (int i = 0; i < sizeof(argv) / sizeof(char); i++)
     {
-        printf("%s, ", argv[i]);
+
+        argvSize++;
+        if (argv[i] == NULL)
+        {
+            break;
+        }
     }
 
     printf("\n");
