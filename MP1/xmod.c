@@ -4,6 +4,17 @@ sig_info info;
 FILE *f_ptr;
 clock_t start, stop;
 options op;
+int fileNamepos;
+extern int errno;
+
+char *concat(const char *s1, const char *s2)
+{
+    char *result = malloc(strlen(s1) + strlen(s2) + 1); // +1 for the null-terminator
+    // in real code you would check for errors in malloc here
+    strcpy(result, s1);
+    strcat(result, s2);
+    return result;
+}
 
 void sigint_handler(int signumber)
 {
@@ -338,7 +349,7 @@ int isDirectory(const char *path)
     return S_ISDIR(statbuf.st_mode);
 }
 
-int changePermissionsOfFileDir(char *fileDir, char *permissions)
+int changePermissionsOfFileDir(char *fileDir, char *permissions, char **argv)
 {
     if (op.R)
     {
@@ -348,11 +359,12 @@ int changePermissionsOfFileDir(char *fileDir, char *permissions)
 
             if (fork() == 0)
             { // children -> changePermissionsOfWholeDir(fileDir)
-                changePermissionsOfWholeDir(fileDir, permissions);
-                printf("should not have reached here");
-            }
-            else
-            {
+            printf("NewArgs: %s","ola");
+                printf("Changing permissions of whole Dir: %s\n", fileDir);
+                
+                changePermissionsOfWholeDir(fileDir, argv);
+                printf("should not have reached here\n");
+                exit(0);
             }
         }
     }
@@ -370,22 +382,59 @@ int changePermissionsOfFileDir(char *fileDir, char *permissions)
     return 0;
 }
 
-void changePermissionsOfWholeDir(char *Dir, char *permissions)
+void changePermissionsOfWholeDir(char *Dir, char **argv)
 {
     struct dirent *dp;
     DIR *dirpath = opendir(Dir);
+    int contentInDir = 0;
+    
     while ((dp = readdir(dirpath)) != NULL)
-    { // Go trough whole Dir
-        if (isDirectory(dp->d_name))
+    { // Go trough whole Dir recursively fork and call iself with exec with new path (Dir+dp->d_name)
+
+        if ((dp->d_name != NULL) && (strcmp(dp->d_name, "..") != 0) && (strcmp(dp->d_name, ".") != 0))
         {
-            // if a Dir is found, recursively fork and call iself with exec with new path (Dir+dp->d_name)
+            
+            contentInDir = 1;
+            char *newPathTemp = concat(Dir, "/");
+            char *newPath = concat(newPathTemp, dp->d_name);
+            char **newArgv;
+            
+            memcpy(newArgv, argv, sizeof(*argv));
+            newArgv[fileNamepos] = newPath;
+
+            printf("NewArgs: ");
+            for (int i = 0; i < sizeof(newArgv) / sizeof(char); i++)
+            {
+                printf("%s, ", newArgv[i]);
+            }
+
+            printf("\n");
+
+            if (fork() == 0)
+            {
+                printf("Calling xmod on: %s\n", newArgv[fileNamepos]);
+                if (execve("./xmod", newArgv, NULL) == -1)
+                {
+                    //printf("returned -1 on execve, value of error: %d and content: %s\n", errno, strerror(errno));
+                    printf("returned -1 on execve, value of error: %d\n", errno);
+                }
+                printf("should not have reached here2222\n");
+                exit(0);
+            }
         }
         // parent simply continues
     }
     (void)closedir(dirpath);
 
-    // parent -> wait() for children and check if all good before exiting
+    if (contentInDir)
+    {
+        // parent -> wait() for children and check if all good before exiting
+        int forkStatus;
+        while (wait(&forkStatus) > 0)
+            ; // this way, the father waits for all the child processes
+    }
 
+    printf("Changed All in whole Dir: %s\n", Dir);
     exit(0);
 }
 
@@ -420,7 +469,7 @@ int changePermissionsOfFile(char *file, char *permissions)
             return -1;
         }
     }
-
+    printf("Changing permissions of: %s\n", file);
     if (chmod(file, command) != 0)
     {
         perror("chmod() error");
@@ -495,6 +544,14 @@ int main(int argc, char **argv, char **envp)
         return -1;
     }
 
+    printf("Args: ");
+    for (int i = 0; i < sizeof(argv) / sizeof(char); i++)
+    {
+        printf("%s, ", argv[i]);
+    }
+
+    printf("\n");
+
     // SIGNAL
     signal(SIGINT, sigint_handler);
     struct sigaction new, old;
@@ -541,8 +598,8 @@ int main(int argc, char **argv, char **envp)
         print_int(elapsed_time, pid, "EXIT", 1);
         return -1;
     }
-
-    changePermissionsOfFileDir(argv[mode_idx + 1], argv[mode_idx]);
+    fileNamepos = mode_idx + 1;
+    changePermissionsOfFileDir(argv[mode_idx + 1], argv[mode_idx], argv);
 
     stop = clock();
     double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
