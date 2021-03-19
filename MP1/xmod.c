@@ -55,6 +55,15 @@ void sigint_handler(int signumber)
     }
 }
 
+void sigchild_handler(int signumber){
+    stop = clock();
+    double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+    pid_t pid = getpid();
+    char sig[10];
+    sprintf(sig, "%i", signumber);
+    end_sig_print(elapsed_time, pid, "SIGNAL_RECV", sig);
+}
+
 void print_int(double instant, pid_t pid, char event[], int info)
 {
     if (fileopen == true)
@@ -127,6 +136,10 @@ int make_command_from_text_mode(char *mode, unsigned int *command)
     default:
         printf("ERROR: Invalid permission mode. ");
         printf("Should be one of <-|+|=>.\n");
+        stop = clock();
+        double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+        pid_t pid = getpid();
+        print_int(elapsed_time, pid, "ERROR", 1);
         return -1;
         break;
     }
@@ -151,6 +164,10 @@ int make_command_from_text_mode(char *mode, unsigned int *command)
         default:
             printf("ERROR: Invalid permission type. ");
             printf("Should be at least one of <rwx>.\n");
+            stop = clock();
+            double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+            pid_t pid = getpid();
+            print_int(elapsed_time, pid, "ERROR", 1);
             return -1;
             break;
         }
@@ -378,17 +395,32 @@ int changePermissionsOfFileDir(char *fileDir, char *permissions, char **argv)
         isDir = isDirectory(fileDir);
         if (isDir)
         { // Fork and changePermissionsOfWholeDir of children
-
-            if (fork() == 0)
+            
+            pid_t pid = fork();
+            if (pid == 0)
             { // children -> changePermissionsOfWholeDir(fileDir)
+
+                stop = clock();
+                char inf[100];
+                sprintf(inf, "%s", *argv);
+                double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+                
+                print_str(elapsed_time, pid, "PROC_CREAT", inf);
+
                 changePermissionsOfWholeDir(fileDir, argv);
+
+
             }
         }
     }
     // parent ->
-    if (changePermissionsOfFile(fileDir, permissions))
-        return 1;
-
+    if (changePermissionsOfFile(fileDir, permissions)){
+        stop = clock();
+        double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+        pid_t pid = getpid();
+        print_int(elapsed_time, pid, "ERROR", 1);
+        return -1;
+    }
     if (op.R)
     {
         if (isDir)
@@ -434,12 +466,23 @@ void changePermissionsOfWholeDir(char *Dir, char **argv)
                 }
             }
 
-            if (fork() == 0)
+            pid_t pid = fork();
+            if (pid == 0)
             {
+                stop = clock();
+                char inf[100];
+                sprintf(inf, "%s", *argv);
+                double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+                print_str(elapsed_time, pid, "PROC_CREAT", inf);
+
                 if (execve("./xmod", newArgv, envpGlobal) == -1)
                 {
                     //printf("returned -1 on execve, value of error: %d and content: %s\n", errno, strerror(errno));
                     printf("returned -1 on execve, value of error: %d\n", errno);
+                    stop = clock();
+                    double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+                    pid_t pid = getpid();
+                    print_int(elapsed_time, pid, "ERROR", 1);
                     exit(1);
                 }
             }
@@ -452,8 +495,8 @@ void changePermissionsOfWholeDir(char *Dir, char **argv)
     {
         // parent -> wait() for children and check if all good before exiting
         int forkStatus;
-        while (wait(&forkStatus) > 0)
-            ; // this way, the father waits for all the child processes
+        while (wait(&forkStatus) > 0); // this way, the father waits for all the child processes
+
     }
     exit(0);
 }
@@ -619,8 +662,8 @@ int main(int argc, char **argv, char **envp)
         fileopen = true;
     }
 
-    char inf[50];
-    sprintf(inf, "%d : %s : %s", argc, *argv, *envp);
+    char inf[100];
+    sprintf(inf, "%s", *argv);
     stop = clock();
     double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
     pid_t pid = getpid();
@@ -650,6 +693,8 @@ int main(int argc, char **argv, char **envp)
 
     // SIGNAL
     signal(SIGINT, sigint_handler);
+    signal(SIGCHLD, sigchild_handler);
+
     struct sigaction new, old;
     sigset_t smask; // defines signals to block while func() is running
                     // prepare struct sigaction

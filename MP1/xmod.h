@@ -28,6 +28,7 @@ Necessary includes
 #define SIGILL 4  /* Illegal instruction. */
 #define SIGTRAP 5 /* Trace trap. */
 #define SIGABRT 6 /* Abort. */
+#define SIGCHLD 17 /* Child */
 
 typedef enum {
     OWNER,
@@ -96,6 +97,8 @@ void changePermissionsOfWholeDir(char *Dir, char** argv);
 int changePermissionsOfFile(char *file, char *permissions);
 
 void sigint_handler(int signumber);
+
+void sigchild_handler(int signumber);
 
 int make_command_from_text_mode(char *mode, unsigned int *command);
 
