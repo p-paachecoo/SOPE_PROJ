@@ -4,12 +4,13 @@
 /*
 Necessary includes
 */
-
+#define __USE_XOPEN_EXTENDED
 #define _POSIX_SOURCE
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
 #undef _POSIX_SOURCE
+#define __USE_POSIX2
 #include <ctype.h>
 #include <dirent.h>
 #include <math.h>
@@ -21,6 +22,7 @@ Necessary includes
 #include <sys/wait.h>
 #include <time.h>
 #include <errno.h>
+#include <unistd.h>
 
 #define SIGHUP 1  /* Hangup the process */
 #define SIGINT 2  /* Interrupt the process */
@@ -60,6 +62,9 @@ typedef struct {
     bool v;
     bool c;
 } options;
+
+int isOriginalProcess();
+extern int usleep (__useconds_t __useconds);
 
 char* concat(const char *s1, const char *s2);
 

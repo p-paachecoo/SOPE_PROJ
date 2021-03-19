@@ -19,6 +19,38 @@ char *concat(const char *s1, const char *s2)
     return result;
 }
 
+int isOriginalProcess(int* pidno, int* size ){
+    char pidline[1024];
+    char *pid2;
+    int i = 0;
+
+    FILE *fp = popen("pidof xmod", "r");
+    fgets(pidline, 1024, fp);
+
+    pid2 = strtok(pidline, " ");
+    while (pid2 != NULL)
+    {
+
+        pidno[i] = atoi(pid2);
+        //printf("%d\n", pidno[i]);
+        pid2 = strtok(NULL, " ");
+        i++;
+    }
+    *size = i;
+    pclose(fp);
+    int minPid = pidno[0];
+    for (int j = 1; j < i; j++)
+    {
+        if (pidno[j] < minPid)
+            minPid = pidno[j];
+    }
+    if (getpid() == minPid)
+    {
+        return 1; //is original
+    }
+    return 0;
+}
+
 void sigint_handler(int signumber)
 {
     stop = clock();
@@ -28,30 +60,41 @@ void sigint_handler(int signumber)
     snprintf(sig, 10, "%i", signumber);
     end_sig_print(elapsed_time, pid, "SIGNAL_RECV", sig);
 
-    //fprintf(stderr, "\nReceived signal %d!\n", signumber);
-
-    //printf("%10s | %10s | %10s | %10s\n", "pid", "fich/dir", "nftot", "nfmod");
-    printf("%10d | %10s | %10d | %10d\n", getpid(), info.originalFileDir,
+    int pidno[64];
+    int size;
+    int original  = isOriginalProcess(pidno,&size);
+    
+    usleep(300000);
+    printf("%15d | %15s | %15d | %15d\n", getpid(), info.originalFileDir,
            info.totalFiles, info.totalMod);
 
-    char answer;
-    int cicle = 0;
-    printf("Should the program terminate? (y/n)\n");
-    while (cicle == 0)
+    if (original)
     {
-        answer = getchar();
-        if (answer == 'y')
+        usleep(300000);
+        char answer;
+        int cicle = 0;
+        printf("Should the program terminate? (y/n)\n");
+        while (cicle == 0)
         {
-            printf("Terminated\n");
-            cicle = 1;
-            exit(0);
+            answer = getchar();
+            if (answer == 'y')
+            {
+                printf("Terminated\n");
+                cicle = 1;
+                for(int i = 0; i < size; i++){
+                    kill(pidno[i],9);
+                }
+                exit(0);
+            }
+            else if (answer == 'n')
+            {
+                printf("Execution resumed\n"); //TO DO message others
+                cicle = 1;
+                return;
+            }
         }
-        else if (answer == 'n')
-        {
-            printf("Execution resumed\n");
-            cicle = 1;
-            return;
-        }
+    } else {
+        sleep(10); //TO DO w8 for message
     }
 }
 
