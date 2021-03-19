@@ -30,7 +30,10 @@ Necessary includes
 #define SIGILL 4  /* Illegal instruction. */
 #define SIGTRAP 5 /* Trace trap. */
 #define SIGABRT 6 /* Abort. */
+#define SIGKILL 9 /* Kill */
 #define SIGCHLD 17 /* Child */
+#define SIGCONT 18 /* Continue */
+#define SIGSTOP 19 /* Stop */
 
 typedef enum {
     OWNER,

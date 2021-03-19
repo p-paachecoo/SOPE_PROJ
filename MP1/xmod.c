@@ -82,8 +82,18 @@ void sigint_handler(int signumber)
                 cicle = 1;
                 for (int i = 0; i < size; i++)
                 {
+                    stop = clock();
+                    double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+                    char sig[10];
+                    snprintf(sig, sizeof(sig), "signal : %i", pidno[i]);
+                    end_sig_print(elapsed_time, pid, "SIGNAL_SENT", sig);
                     kill(pidno[i], 9);
+
                 }
+                stop = clock();
+                double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+                pid_t pid = getpid();
+                print_int(elapsed_time, pid, "PROC_EXIT", 0);
                 exit(0);
             }
             else if (answer == 'n')
@@ -91,6 +101,11 @@ void sigint_handler(int signumber)
                 printf("Execution resumed\n");
                 for (int i = 0; i < size; i++)
                 {
+                    stop = clock();
+                    double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+                    char sig[10];
+                    snprintf(sig, sizeof(sig), "signal : %i", pidno[i]);
+                    end_sig_print(elapsed_time, pid, "SIGNAL_SENT", sig);
                     kill(pidno[i], 18);
                 }
                 cicle = 1;
@@ -100,7 +115,14 @@ void sigint_handler(int signumber)
     }
     else
     {
+        stop = clock();
+        double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+        pid_t pid = getpid();
+        char sig[10];
+        snprintf(sig, sizeof(sig), "signal : %i", pid);
+        end_sig_print(elapsed_time, pid, "SIGNAL_SENT", sig);
         kill(getpid(), 19);
+        
     }
 }
 
@@ -553,6 +575,10 @@ void changePermissionsOfWholeDir(char *Dir, char **argv)
         while (wait(&forkStatus) > 0)
             ; // this way, the father waits for all the child processes
     }
+    stop = clock();
+    double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+    pid_t pid = getpid();
+    print_int(elapsed_time, pid, "PROC_EXIT", 0);
     exit(0);
 }
 
