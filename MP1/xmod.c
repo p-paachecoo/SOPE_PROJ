@@ -361,11 +361,7 @@ int changePermissionsOfFileDir(char *fileDir, char *permissions, char **argv)
 
             if (fork() == 0)
             { // children -> changePermissionsOfWholeDir(fileDir)
-                printf("Changing permissions of whole Dir: %s\n", fileDir);
-
                 changePermissionsOfWholeDir(fileDir, argv);
-                printf("should not have reached here\n");
-                exit(0);
             }
         }
     }
@@ -376,8 +372,8 @@ int changePermissionsOfFileDir(char *fileDir, char *permissions, char **argv)
     if (op.R)
     {
         int forkStatus;
-        wait(&forkStatus);                        // Reunite forks
-        printf("Forks rejoined: %d", forkStatus); // Check if all good
+        if(wait(&forkStatus)<0)                        // Reunite forks
+            perror("Fork Status indicates error!\n");
     }
 
     return 0;
@@ -400,7 +396,6 @@ void changePermissionsOfWholeDir(char *Dir, char **argv)
             char *newPath = concat(newPathTemp, dp->d_name);
             char *newArgv[argvSize];
 
-            printf("NewArgs: %d", fileNamepos);
             for (int i = 0; i < argvSize; i++)
             {
                 if (newArgv[i] == NULL)
@@ -413,21 +408,16 @@ void changePermissionsOfWholeDir(char *Dir, char **argv)
                 {
                     newArgv[i] = argv[i];
                 }
-                printf("%s, ", newArgv[i]);
             }
-
-            printf("\n");
 
             if (fork() == 0)
             {
-                printf("Calling xmod on: %s\n", newArgv[fileNamepos]);
                 if (execve("./xmod", newArgv, envpGlobal) == -1)
                 {
                     //printf("returned -1 on execve, value of error: %d and content: %s\n", errno, strerror(errno));
                     printf("returned -1 on execve, value of error: %d\n", errno);
+                    exit(1);
                 }
-                printf("should not have reached here2222\n");
-                exit(0);
             }
         }
         // parent simply continues
@@ -441,8 +431,6 @@ void changePermissionsOfWholeDir(char *Dir, char **argv)
         while (wait(&forkStatus) > 0)
             ; // this way, the father waits for all the child processes
     }
-
-    printf("Changed All in whole Dir: %s\n", Dir);
     exit(0);
 }
 
@@ -477,7 +465,6 @@ int changePermissionsOfFile(char *file, char *permissions)
             return -1;
         }
     }
-    printf("Changing permissions of: %s\n", file);
     if (chmod(file, command) != 0)
     {
         perror("chmod() error");
@@ -535,16 +522,11 @@ void optionV_print_failure(char *filename, unsigned int octalModePrevious,
 int main(int argc, char **argv, char **envp)
 {
     envpGlobal = envp;
-
-    printf("NewEnvp: ");
     char *logFileName = getenv("LOG_FILENAME");
     envpGlobal[sizeof(envp) / sizeof(char)] = logFileName;
     for (int i = 0; i < sizeof(envp) / sizeof(char) + 1; i++)
     {
-
         envpGlobal[i] = envp[i];
-
-        printf("%s, ", envpGlobal[i]);
     }
 
     start = clock();
@@ -565,7 +547,6 @@ int main(int argc, char **argv, char **envp)
         return -1;
     }
 
-    printf("Args: ");
     argvSize = 0;
     for (int i = 0; i < sizeof(argv) / sizeof(char); i++)
     {
