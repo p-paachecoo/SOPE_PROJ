@@ -569,13 +569,6 @@ void changePermissionsOfWholeDir(char *Dir, char **argv, char *permissions)
                     double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
                     print_str(elapsed_time, pid, "PROC_CREAT", inf);
 
-                    if (fileopen)
-                    {
-                        char *fileName = getenv("LOG_FILENAME");
-                        char *newFileNameAux = concat("../", fileName);
-                        char *newFileName = concat("LOG_FILENAME=", newFileNameAux);
-                        putenv(newFileName);
-                    }
 
                     if (execve("./xmod", newArgv, envpGlobal) == -1)
                     {
@@ -760,8 +753,7 @@ int main(int argc, char **argv, char **envp)
     int original = isOriginalProcess(pidno, &size);
     if (original)
     {
-        printf("LOG: %s\n", getenv("LOG_FILENAME"));
-        if ((f_ptr = fopen("register.txt", "w")) == NULL)
+        if ((f_ptr = fopen(getenv("LOG_FILENAME"), "w")) == NULL)
         {
             printf("No LOG_FILENAME set. No logs will be registered\n");
         }
@@ -770,8 +762,7 @@ int main(int argc, char **argv, char **envp)
             fileopen = true;
         }
     } else {
-        printf("LOG AAAAA: %s\n", getenv("LOG_FILENAME"));
-        if ((f_ptr = fopen("register.txt", "a")) == NULL)
+        if ((f_ptr = fopen(getenv("LOG_FILENAME"), "a")) == NULL)
         {
             printf("No LOG_FILENAME set. No logs will be registered\n");
         }
