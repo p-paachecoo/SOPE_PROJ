@@ -75,15 +75,15 @@ void sigint_handler(int signumber)
     {
         usleep(500000);
         char answer;
-        int cicle = 0;
+        int cycle = 0;
         printf("Should the program terminate? (y/n)\n");
-        while (cicle == 0)
+        while (cycle == 0)
         {
             answer = getchar();
             if (answer == 'y')
             {
                 printf("Terminated\n");
-                cicle = 1;
+                cycle = 1;
                 for (int i = 0; i < size; i++)
                 {
                     stop = clock();
@@ -111,7 +111,7 @@ void sigint_handler(int signumber)
                     end_sig_print(elapsed_time, pid, "SIGNAL_SENT", sig);
                     kill(pidno[i], 18);
                 }
-                cicle = 1;
+                cycle = 1;
                 return;
             }
         }
