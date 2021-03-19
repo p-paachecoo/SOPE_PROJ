@@ -587,7 +587,8 @@ int changePermissionsOfFileDir(char *fileDir, char *permissions, char **argv)
                 for (int i = 1; i < argNum; i++)
                 {
                     inf = concat(inf, " ");
-                    inf = concat(inf, argv[i]);
+                    if (inf != NULL)
+                        inf = concat(inf, argv[i]);
                 }
                 double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
                 pid_t pid = getpid();
@@ -669,7 +670,8 @@ void changePermissionsOfWholeDir(char *Dir, char **argv, char *permissions)
                         for (int i = 1; i < argNum; i++)
                         {
                             inf = concat(inf, " ");
-                            inf = concat(inf, argv[i]);
+                            if (inf != NULL)
+                                inf = concat(inf, argv[i]);
                         }
                         double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
                         pid_t pid = getpid();
@@ -883,7 +885,8 @@ int main(int argc, char **argv, char **envp)
     for (int i = 1; i < argc; i++)
     {
         inf = concat(inf, " ");
-        inf = concat(inf, argv[i]);
+        if (inf != NULL)
+            inf = concat(inf, argv[i]);
     }
     stop = clock();
     double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
