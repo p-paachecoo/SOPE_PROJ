@@ -534,6 +534,7 @@ int main(int argc, char **argv, char **envp)
     }
     else {
         f_ptr = fopen(getenv("LOG_FILENAME"), "w");
+        fileopen = true;
     }
     
     if (argc < 3)
