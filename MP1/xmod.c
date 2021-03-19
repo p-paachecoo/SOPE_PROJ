@@ -20,19 +20,20 @@ char *concat(const char *s1, const char *s2)
 int isOriginalProcess(int *pidno, int *size)
 {
     char pidline[1024];
+    char *saveptr;
     char *pid2;
     int i = 0;
 
     FILE *fp = popen("pidof xmod", "r");
     fgets(pidline, 1024, fp);
 
-    pid2 = strtok(pidline, " ");
+    pid2 = strtok_r(pidline, " ", &saveptr);
     while (pid2 != NULL)
     {
 
         pidno[i] = atoi(pid2);
         //printf("%d\n", pidno[i]);
-        pid2 = strtok(NULL, " ");
+        pid2 = strtok_r(NULL, " ", &saveptr);
         i++;
     }
     *size = i;
@@ -88,7 +89,6 @@ void sigint_handler(int signumber)
                     snprintf(sig, sizeof(sig), "signal : %i", pidno[i]);
                     end_sig_print(elapsed_time, pid, "SIGNAL_SENT", sig);
                     kill(pidno[i], 9);
-
                 }
                 stop = clock();
                 double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
@@ -122,7 +122,6 @@ void sigint_handler(int signumber)
         snprintf(sig, sizeof(sig), "signal : %d", pid);
         end_sig_print(elapsed_time, pid, "SIGNAL_SENT", sig);
         kill(getpid(), 19);
-        
     }
 }
 
@@ -505,7 +504,6 @@ int changePermissionsOfFileDir(char *fileDir, char *permissions, char **argv)
             int forkStatus;
             while (wait(&forkStatus) > 0)
                 ; // this way, the father waits for all the child processes
-            
         }
     }
 
