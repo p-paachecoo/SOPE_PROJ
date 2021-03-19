@@ -13,9 +13,7 @@ extern int errno;
 char *concat(const char *s1, const char *s2)
 {
     char *result = malloc(strlen(s1) + strlen(s2) + 1); // +1 for the null-terminator
-    // in real code you would check for errors in malloc here
-    strcpy(result, s1);
-    strcat(result, s2);
+    snprintf(result, strlen(s1) + strlen(s2) + 1, "%s%s", s1, s2);
     return result;
 }
 
@@ -57,7 +55,7 @@ void sigint_handler(int signumber)
     double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
     pid_t pid = getpid();
     char sig[10];
-    snprintf(sig, 10, "%i", signumber);
+    snprintf(sig, sizeof(sig), "%i", signumber);
     end_sig_print(elapsed_time, pid, "SIGNAL_RECV", sig);
 
     int pidno[64];
@@ -104,7 +102,7 @@ void sigchild_handler(int signumber)
     double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
     pid_t pid = getpid();
     char sig[10];
-    snprintf(sig, 10, "%i", signumber);
+    snprintf(sig, sizeof(sig), "%i", signumber);
     end_sig_print(elapsed_time, pid, "SIGNAL_RECV", sig);
 }
 
