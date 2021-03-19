@@ -353,9 +353,10 @@ int isDirectory(const char *path)
 
 int changePermissionsOfFileDir(char *fileDir, char *permissions, char **argv)
 {
+    int isDir = 0;
     if (op.R)
     {
-        int isDir = isDirectory(fileDir);
+        isDir = isDirectory(fileDir);
         if (isDir)
         { // Fork and changePermissionsOfWholeDir of children
 
@@ -371,9 +372,12 @@ int changePermissionsOfFileDir(char *fileDir, char *permissions, char **argv)
 
     if (op.R)
     {
-        int forkStatus;
-        if(wait(&forkStatus)<0)                        // Reunite forks
-            perror("Fork Status indicates error!\n");
+        if (isDir)
+        {
+            int forkStatus;
+            if (wait(&forkStatus) < 0) // Reunite forks
+                perror("Fork Status indicates error!\n");
+        }
     }
 
     return 0;
@@ -557,8 +561,6 @@ int main(int argc, char **argv, char **envp)
             break;
         }
     }
-
-    printf("\n");
 
     // SIGNAL
     signal(SIGINT, sigint_handler);
