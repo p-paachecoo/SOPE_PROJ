@@ -479,15 +479,14 @@ int changePermissionsOfFileDir(char *fileDir, char *permissions, char **argv)
         if (isDir)
         { // Fork and changePermissionsOfWholeDir of children
 
-            pid_t pid = fork();
-            if (pid == 0)
+            if (fork() == 0)
             { // children -> changePermissionsOfWholeDir(fileDir)
 
                 stop = clock();
                 char *inf = malloc(strlen(*argv) + 1);
                 snprintf(inf, strlen(*argv) + 1, "%s", *argv);
                 double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
-
+                pid_t pid = getpid();
                 print_str(elapsed_time, pid, "PROC_CREAT", inf);
 
                 changePermissionsOfWholeDir(fileDir, argv, permissions);
@@ -557,13 +556,13 @@ void changePermissionsOfWholeDir(char *Dir, char **argv, char *permissions)
                 print_int(elapsed_time, pid, "ERROR", 1);
             }
 
-            pid_t pid = fork();
-            if (pid == 0)
+            if (fork() == 0)
             {
                 stop = clock();
                 char *inf = malloc(strlen(*argv) + 1);
                 snprintf(inf, strlen(*argv) + 1, "%s", *argv);
                 double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+                pid_t pid = getpid();
                 print_str(elapsed_time, pid, "PROC_CREAT", inf);
 
                 if (execve("./xmod", newArgv, envpGlobal) == -1)
