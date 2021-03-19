@@ -466,6 +466,9 @@ int isDirectory(const char *path)
 
 int changePermissionsOfFileDir(char *fileDir, char *permissions, char **argv)
 {
+    int pidno[64];
+    int size;
+    int original = isOriginalProcess(pidno, &size);
     int isDir = 0;
     if (op.R)
     {
@@ -488,14 +491,17 @@ int changePermissionsOfFileDir(char *fileDir, char *permissions, char **argv)
             }
         }
     }
-    // parent ->
-    if (changePermissionsOfFile(fileDir, permissions))
+    if (original)
     {
-        stop = clock();
-        double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
-        pid_t pid = getpid();
-        print_int(elapsed_time, pid, "ERROR", 1);
-        return -1;
+        // parent ->
+        if (changePermissionsOfFile(fileDir, permissions))
+        {
+            stop = clock();
+            double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+            pid_t pid = getpid();
+            print_int(elapsed_time, pid, "ERROR", 1);
+            return -1;
+        }
     }
     if (op.R)
     {
@@ -510,7 +516,7 @@ int changePermissionsOfFileDir(char *fileDir, char *permissions, char **argv)
     return 0;
 }
 
-void changePermissionsOfWholeDir(char *Dir, char **argv, char* permissions)
+void changePermissionsOfWholeDir(char *Dir, char **argv, char *permissions)
 {
     struct dirent *dp;
     DIR *dirpath = opendir(Dir);
@@ -540,41 +546,32 @@ void changePermissionsOfWholeDir(char *Dir, char **argv, char* permissions)
                     newArgv[i] = argv[i];
                 }
             }
-
-            if (!isDirectory(newPath))
+            if (changePermissionsOfFile(newPath, permissions))
             {
-                printf("Changing File: %s\n", newPath);
-                if (changePermissionsOfFile(newPath, permissions))
+                stop = clock();
+                double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+                pid_t pid = getpid();
+                print_int(elapsed_time, pid, "ERROR", 1);
+            }
+
+            pid_t pid = fork();
+            if (pid == 0)
+            {
+                stop = clock();
+                char *inf = malloc(strlen(*argv) + 1);
+                snprintf(inf, strlen(*argv) + 1, "%s", *argv);
+                double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+                print_str(elapsed_time, pid, "PROC_CREAT", inf);
+
+                if (execve("./xmod", newArgv, envpGlobal) == -1)
                 {
+                    //printf("returned -1 on execve, value of error: %d and content: %s\n", errno, strerror(errno));
+                    printf("returned -1 on execve, value of error: %d\n", errno);
                     stop = clock();
                     double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
                     pid_t pid = getpid();
                     print_int(elapsed_time, pid, "ERROR", 1);
-                }
-            }
-            else
-            {
-                printf("Altering Dir: %s\n", newPath);
-
-                pid_t pid = fork();
-                if (pid == 0)
-                {
-                    stop = clock();
-                    char *inf = malloc(strlen(*argv) + 1);
-                    snprintf(inf, strlen(*argv) + 1, "%s", *argv);
-                    double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
-                    print_str(elapsed_time, pid, "PROC_CREAT", inf);
-
-                    if (execve("./xmod", newArgv, envpGlobal) == -1)
-                    {
-                        //printf("returned -1 on execve, value of error: %d and content: %s\n", errno, strerror(errno));
-                        printf("returned -1 on execve, value of error: %d\n", errno);
-                        stop = clock();
-                        double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
-                        pid_t pid = getpid();
-                        print_int(elapsed_time, pid, "ERROR", 1);
-                        exit(1);
-                    }
+                    exit(1);
                 }
             }
         }
@@ -791,19 +788,7 @@ int main(int argc, char **argv, char **envp)
     signal(SIGINT, sigint_handler);
     signal(SIGCHLD, sigchild_handler);
 
-    struct sigaction new, old;
-    sigset_t smask; // defines signals to block while func() is running
-                    // prepare struct sigaction
 
-    // if (sigemptyset(&smask) == -1) // block no signal
-    //     perror("sigsetfunctions");
-
-    // new.sa_handler = sigint_handler;
-    // new.sa_mask = smask;
-    // new.sa_flags = 0; // usually works
-
-    // if (sigaction(SIGUSR1, &new, &old) == -1)
-    //     perror("sigaction");
 
     size_t mode_idx = 1;
 
