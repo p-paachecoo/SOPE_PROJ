@@ -537,10 +537,6 @@ void changePermissionsOfWholeDir(char *Dir, char **argv, char *permissions)
 
             for (int i = 0; i < argvSize; i++)
             {
-                if (newArgv[i] == NULL)
-                {
-                    break;
-                }
                 if (i == fileNamepos)
                     newArgv[i] = newPath;
                 else
