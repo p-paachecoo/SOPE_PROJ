@@ -557,24 +557,36 @@ void changePermissionsOfWholeDir(char *Dir, char **argv, char *permissions)
                 print_int(elapsed_time, pid, "ERROR", 1);
             }
 
-            pid_t pid = fork();
-            if (pid == 0)
+            if (isDirectory(newPath))
             {
-                stop = clock();
-                char *inf = malloc(strlen(*argv) + 1);
-                snprintf(inf, strlen(*argv) + 1, "%s", *argv);
-                double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
-                print_str(elapsed_time, pid, "PROC_CREAT", inf);
 
-                if (execve("./xmod", newArgv, envpGlobal) == -1)
+                pid_t pid = fork();
+                if (pid == 0)
                 {
-                    //printf("returned -1 on execve, value of error: %d and content: %s\n", errno, strerror(errno));
-                    printf("returned -1 on execve, value of error: %d\n", errno);
                     stop = clock();
+                    char *inf = malloc(strlen(*argv) + 1);
+                    snprintf(inf, strlen(*argv) + 1, "%s", *argv);
                     double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
-                    pid_t pid = getpid();
-                    print_int(elapsed_time, pid, "ERROR", 1);
-                    exit(1);
+                    print_str(elapsed_time, pid, "PROC_CREAT", inf);
+
+                    if (fileopen)
+                    {
+                        char *fileName = getenv("LOG_FILENAME");
+                        char *newFileNameAux = concat("../", fileName);
+                        char *newFileName = concat("LOG_FILENAME=", newFileNameAux);
+                        putenv(newFileName);
+                    }
+
+                    if (execve("./xmod", newArgv, envpGlobal) == -1)
+                    {
+                        //printf("returned -1 on execve, value of error: %d and content: %s\n", errno, strerror(errno));
+                        printf("returned -1 on execve, value of error: %d\n", errno);
+                        stop = clock();
+                        double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+                        pid_t pid = getpid();
+                        print_int(elapsed_time, pid, "ERROR", 1);
+                        exit(1);
+                    }
                 }
             }
         }
@@ -741,15 +753,32 @@ int main(int argc, char **argv, char **envp)
     envpGlobal = envp;
 
     start = clock();
+    
 
-    if ((f_ptr = fopen(getenv("LOG_FILENAME"), "w")) == NULL)
+    int pidno[64];
+    int size;
+    int original = isOriginalProcess(pidno, &size);
+    if (original)
     {
-        printf("No LOG_FILENAME set. No logs will be registered\n");
-    }
-    else
-    {
-        f_ptr = fopen(getenv("LOG_FILENAME"), "w");
-        fileopen = true;
+        printf("LOG: %s\n", getenv("LOG_FILENAME"));
+        if ((f_ptr = fopen("register.txt", "w")) == NULL)
+        {
+            printf("No LOG_FILENAME set. No logs will be registered\n");
+        }
+        else
+        {
+            fileopen = true;
+        }
+    } else {
+        printf("LOG AAAAA: %s\n", getenv("LOG_FILENAME"));
+        if ((f_ptr = fopen("register.txt", "a")) == NULL)
+        {
+            printf("No LOG_FILENAME set. No logs will be registered\n");
+        }
+        else
+        {
+            fileopen = true;
+        } 
     }
 
     char *inf = malloc(strlen(*argv) + 1);

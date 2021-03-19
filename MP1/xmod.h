@@ -1,5 +1,6 @@
 #ifndef MP1_XMOD_H_
 #define MP1_XMOD_H_
+#define _XOPEN_SOURCE
 
 /*
 Necessary includes
@@ -10,7 +11,6 @@ Necessary includes
 #include <sys/types.h>
 #include <unistd.h>
 #undef _POSIX_SOURCE
-#define __USE_POSIX2
 #include <ctype.h>
 #include <dirent.h>
 #include <errno.h>
