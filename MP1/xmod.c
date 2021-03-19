@@ -25,7 +25,7 @@ int isOriginalProcess(int *pidno, int *size)
     char *pid2;
     int i = 0;
 
-    FILE *fp = popen("pidof xmod", "r");
+    FILE *fp = popen("ps -u | grep -E 'xmod' | awk '{print $2}'", "r");
     fgets(pidline, 1024, fp);
 
     pid2 = strtok_r(pidline, " ", &saveptr);
@@ -33,7 +33,7 @@ int isOriginalProcess(int *pidno, int *size)
     {
 
         pidno[i] = atoi(pid2);
-        //printf("%d\n", pidno[i]);
+        //printf("O: %d\n", pidno[i]);
         pid2 = strtok_r(NULL, " ", &saveptr);
         i++;
     }
