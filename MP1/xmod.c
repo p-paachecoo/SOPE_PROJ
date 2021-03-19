@@ -87,28 +87,39 @@ void sigint_handler(int signumber)
                     stop = clock();
                     double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
                     char sig[30];
-                    char* signame;
-                    switch(signumber){
-                        case 1:
-                            signame = "SIGHUP";
-                        case 2:
-                            signame = "SIGINT";
-                        case 3:
-                            signame = "SIGQUIT";
-                        case 4:
-                            signame = "SIGILL";
-                        case 5:
-                            signame = "SIGTRAP";
-                        case 6:
-                            signame = "SIGABRT";
-                        case 9:
-                            signame = "SIGKILL";
-                        case 17:
-                            signame = "SIGCHLD";
-                        case 18:
-                            signame = "SIGCONT";
-                        case 19:
-                            signame = "SIGSTOP";
+                    char *signame;
+                    switch (signumber)
+                    {
+                    case 1:
+                        signame = "SIGHUP";
+                        break;
+                    case 2:
+                        signame = "SIGINT";
+                        break;
+                    case 3:
+                        signame = "SIGQUIT";
+                        break;
+                    case 4:
+                        signame = "SIGILL";
+                        break;
+                    case 5:
+                        signame = "SIGTRAP";
+                        break;
+                    case 6:
+                        signame = "SIGABRT";
+                        break;
+                    case 9:
+                        signame = "SIGKILL";
+                        break;
+                    case 17:
+                        signame = "SIGCHLD";
+                        break;
+                    case 18:
+                        signame = "SIGCONT";
+                        break;
+                    case 19:
+                        signame = "SIGSTOP";
+                        break;
                     }
                     snprintf(sig, sizeof(sig), "%s : %i", signame, pidno[i]);
                     end_sig_print(elapsed_time, pid, "SIGNAL_SENT", sig);
@@ -128,28 +139,39 @@ void sigint_handler(int signumber)
                     stop = clock();
                     double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
                     char sig[30];
-                    char* signame;
-                    switch(signumber){
-                        case 1:
-                            signame = "SIGHUP";
-                        case 2:
-                            signame = "SIGINT";
-                        case 3:
-                            signame = "SIGQUIT";
-                        case 4:
-                            signame = "SIGILL";
-                        case 5:
-                            signame = "SIGTRAP";
-                        case 6:
-                            signame = "SIGABRT";
-                        case 9:
-                            signame = "SIGKILL";
-                        case 17:
-                            signame = "SIGCHLD";
-                        case 18:
-                            signame = "SIGCONT";
-                        case 19:
-                            signame = "SIGSTOP";
+                    char *signame;
+                    switch (signumber)
+                    {
+                    case 1:
+                        signame = "SIGHUP";
+                        break;
+                    case 2:
+                        signame = "SIGINT";
+                        break;
+                    case 3:
+                        signame = "SIGQUIT";
+                        break;
+                    case 4:
+                        signame = "SIGILL";
+                        break;
+                    case 5:
+                        signame = "SIGTRAP";
+                        break;
+                    case 6:
+                        signame = "SIGABRT";
+                        break;
+                    case 9:
+                        signame = "SIGKILL";
+                        break;
+                    case 17:
+                        signame = "SIGCHLD";
+                        break;
+                    case 18:
+                        signame = "SIGCONT";
+                        break;
+                    case 19:
+                        signame = "SIGSTOP";
+                        break;
                     }
                     snprintf(sig, sizeof(sig), "%s : %d", signame, pidno[i]);
                     end_sig_print(elapsed_time, pid, "SIGNAL_SENT", sig);
@@ -165,28 +187,39 @@ void sigint_handler(int signumber)
         double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
         pid_t pid = getpid();
         char sig[30];
-        char* signame;
-        switch(signumber){
-            case 1:
-                signame = "SIGHUP";
-            case 2:
-                signame = "SIGINT";
-            case 3:
-                signame = "SIGQUIT";
-            case 4:
-                signame = "SIGILL";
-            case 5:
-                signame = "SIGTRAP";
-            case 6:
-                signame = "SIGABRT";
-            case 9:
-                signame = "SIGKILL";
-            case 17:
-                signame = "SIGCHLD";
-            case 18:
-                signame = "SIGCONT";
-            case 19:
-                signame = "SIGSTOP";
+        char *signame;
+        switch (signumber)
+        {
+        case 1:
+            signame = "SIGHUP";
+            break;
+        case 2:
+            signame = "SIGINT";
+            break;
+        case 3:
+            signame = "SIGQUIT";
+            break;
+        case 4:
+            signame = "SIGILL";
+            break;
+        case 5:
+            signame = "SIGTRAP";
+            break;
+        case 6:
+            signame = "SIGABRT";
+            break;
+        case 9:
+            signame = "SIGKILL";
+            break;
+        case 17:
+            signame = "SIGCHLD";
+            break;
+        case 18:
+            signame = "SIGCONT";
+            break;
+        case 19:
+            signame = "SIGSTOP";
+            break;
         }
         snprintf(sig, sizeof(sig), "%s : %d", signame, pid);
         end_sig_print(elapsed_time, pid, "SIGNAL_SENT", sig);
