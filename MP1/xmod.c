@@ -544,6 +544,13 @@ int main(int argc, char **argv, char **envp)
         f_ptr = fopen(getenv("LOG_FILENAME"), "w");
         fileopen = true;
     }
+
+    char inf[50];
+    sprintf(inf, "%d : %s : %s", argc, *argv, *envp);
+    stop = clock();
+    double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+    pid_t pid = getpid();
+    print_str(elapsed_time, pid, "PROC_CREAT", inf);
     
     if (argc < 3)
     {
@@ -606,8 +613,8 @@ int main(int argc, char **argv, char **envp)
     changePermissionsOfFileDir(argv[mode_idx + 1], argv[mode_idx]);
 
     stop = clock();
-    double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
-    pid_t pid = getpid();
+    elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+    pid = getpid();
     print_int(elapsed_time, pid, "EXIT", 0);
     
     if(fileopen == true) fclose(f_ptr);
