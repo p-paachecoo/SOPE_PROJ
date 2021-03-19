@@ -11,7 +11,9 @@ void sigint_handler(int signumber)
     stop = clock();
     double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
     pid_t pid = getpid();
-    end_sig_print(elapsed_time, pid, "SIGNAL_RECV", signumber);
+    char sig[10];
+    sprintf(sig, "%i", signumber);
+    end_sig_print(elapsed_time, pid, "SIGNAL_RECV", sig);
 
     fprintf(stderr, "\nReceived signal %d!\n", signumber);
 
@@ -52,7 +54,7 @@ void print_str(double instant, pid_t pid, char event[], char info[])
 
 void end_sig_print(double instant, pid_t pid, char event[], char info[])
 {
-    if(fileopen == true) fprintf(f_ptr,"%d ; %s ; %s ; %s\n", instant, pid, event, info);
+    if(fileopen == true) fprintf(f_ptr,"%f ; %i ; %s ; %s\n", instant, pid, event, info);
 }
 
 int make_command_from_text_mode(char *mode, unsigned int *command)
@@ -408,20 +410,20 @@ int changePermissionsOfFile(char *file, char *permissions)
     struct stat buffer;
     if (stat(file, &buffer) != 0)
     {
-        if (op.v)
+        if (op.v) {
             optionV_print_failure(file, 0, 0);
             stop = clock();
             double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
             pid_t pid = getpid();
             print_int(elapsed_time, pid, "ERROR", 1);
-    
-        else if (op.c)
+        }
+        else if (op.c) {
             optionC_print_failure(file);
             stop = clock();
             double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
             pid_t pid = getpid();
             print_int(elapsed_time, pid, "ERROR", 1);
-
+        }
         return -1;
     }
 
@@ -593,8 +595,6 @@ int main(int argc, char **argv, char **envp)
     }
 
     changePermissionsOfFileDir(argv[mode_idx + 1], argv[mode_idx]);
-
-    pause();
 
     stop = clock();
     double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
