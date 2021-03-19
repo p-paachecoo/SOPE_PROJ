@@ -485,6 +485,14 @@ int changePermissionsOfFile(char *file, char *permissions)
             pid_t pid = getpid();
             print_str(elapsed_time, pid, "FILE_MODF", inf);
         }
+        else if(!(op.v && op.R && op.c)){
+            char inf[33];
+            sprintf(inf, "%s : %04o : %04o", file, curr_perm, command);
+            stop = clock();
+            double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+            pid_t pid = getpid();
+            print_str(elapsed_time, pid, "FILE_MODF", inf);
+        }
     }
 
     return 0;
