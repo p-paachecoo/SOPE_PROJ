@@ -6,6 +6,7 @@ clock_t start, stop;
 options op;
 bool fileopen = false;
 int fileNamepos;
+int argNum;
 int argvSize;
 char **envpGlobal;
 extern int errno;
@@ -582,8 +583,12 @@ int changePermissionsOfFileDir(char *fileDir, char *permissions, char **argv)
             { // children -> changePermissionsOfWholeDir(fileDir)
 
                 stop = clock();
-                char *inf = malloc(strlen(*argv) + 1);
-                snprintf(inf, strlen(*argv) + 1, "%s", *argv);
+                char *inf = argv[0];
+                for (int i = 1; i < argNum; i++)
+                {
+                    inf = concat(inf, " ");
+                    inf = concat(inf, argv[i]);
+                }
                 double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
                 pid_t pid = getpid();
                 print_str(elapsed_time, pid, "PROC_CREAT", inf);
@@ -660,8 +665,12 @@ void changePermissionsOfWholeDir(char *Dir, char **argv, char *permissions)
                     if (fork() == 0)
                     {
                         stop = clock();
-                        char *inf = malloc(strlen(*argv) + 1);
-                        snprintf(inf, strlen(*argv) + 1, "%s", *argv);
+                        char *inf = argv[0];
+                        for (int i = 1; i < argNum; i++)
+                        {
+                            inf = concat(inf, " ");
+                            inf = concat(inf, argv[i]);
+                        }
                         double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
                         pid_t pid = getpid();
                         print_str(elapsed_time, pid, "PROC_CREAT", inf);
@@ -870,8 +879,12 @@ int main(int argc, char **argv, char **envp)
         }
     }
 
-    char *inf = malloc(strlen(*argv) + 1);
-    snprintf(inf, strlen(*argv) + 1, "%s", *argv);
+    char *inf = argv[0];
+    for (int i = 1; i < argc; i++)
+    {
+        inf = concat(inf, " ");
+        inf = concat(inf, argv[i]);
+    }
     stop = clock();
     double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
     pid_t pid = getpid();
@@ -887,6 +900,8 @@ int main(int argc, char **argv, char **envp)
         print_int(elapsed_time, pid, "ERROR", 1);
         return -1;
     }
+
+    argNum = argc;
 
     argvSize = 0;
     for (int i = 0; i < sizeof(argv) / sizeof(char); i++)
@@ -933,6 +948,7 @@ int main(int argc, char **argv, char **envp)
         print_int(elapsed_time, pid, "ERROR", 1);
         return -1;
     }
+
     fileNamepos = mode_idx + 1;
     info.originalFileDir = argv[mode_idx + 1];
     changePermissionsOfFileDir(argv[mode_idx + 1], argv[mode_idx], argv);
