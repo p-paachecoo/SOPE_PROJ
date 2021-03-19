@@ -84,7 +84,7 @@ void sigint_handler(int signumber)
                 {
                     stop = clock();
                     double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
-                    char sig[10];
+                    char sig[30];
                     snprintf(sig, sizeof(sig), "signal : %i", pidno[i]);
                     end_sig_print(elapsed_time, pid, "SIGNAL_SENT", sig);
                     kill(pidno[i], 9);
@@ -103,8 +103,8 @@ void sigint_handler(int signumber)
                 {
                     stop = clock();
                     double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
-                    char sig[10];
-                    snprintf(sig, sizeof(sig), "signal : %i", pidno[i]);
+                    char sig[30];
+                    snprintf(sig, sizeof(sig), "signal : %d", pidno[i]);
                     end_sig_print(elapsed_time, pid, "SIGNAL_SENT", sig);
                     kill(pidno[i], 18);
                 }
@@ -118,8 +118,8 @@ void sigint_handler(int signumber)
         stop = clock();
         double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
         pid_t pid = getpid();
-        char sig[10];
-        snprintf(sig, sizeof(sig), "signal : %i", pid);
+        char sig[30];
+        snprintf(sig, sizeof(sig), "signal : %d", pid);
         end_sig_print(elapsed_time, pid, "SIGNAL_SENT", sig);
         kill(getpid(), 19);
         
@@ -145,7 +145,7 @@ void sigchild_handler(int signumber)
 void print_int(double instant, pid_t pid, char event[], int info)
 {
     if (fileopen == true)
-        fprintf(f_ptr, "%f – %d – %s – %i\n", fabs(instant), pid, event, info);
+        fprintf(f_ptr, "%f ; %d ; %s ; %i\n", fabs(instant), pid, event, info);
 }
 
 void print_str(double instant, pid_t pid, char event[], char info[])
