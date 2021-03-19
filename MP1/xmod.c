@@ -63,14 +63,17 @@ void sigint_handler(int signumber)
     int pidno[64];
     int size;
     int original = isOriginalProcess(pidno, &size);
-
-    usleep(300000);
-    printf("%15d | %15s | %15d | %15d\n", getpid(), info.originalFileDir,
+    if (original)
+        printf("%25s | %25s | %25s | %25s\n", "PID", "FILE/DIR",
+               "FILES SEARCHED", "FILES MODDED");
+    else
+        usleep(300000);
+    printf("%25d | %25s | %25d | %25d\n", getpid(), info.originalFileDir,
            info.totalFiles, info.totalMod);
 
     if (original)
     {
-        usleep(300000);
+        usleep(500000);
         char answer;
         int cicle = 0;
         printf("Should the program terminate? (y/n)\n");
@@ -736,12 +739,6 @@ int main(int argc, char **argv, char **envp)
     info.totalMod = 0;
 
     envpGlobal = envp;
-    char *logFileName = getenv("LOG_FILENAME");
-    envpGlobal[sizeof(envp) / sizeof(char)] = logFileName;
-    for (int i = 0; i < sizeof(envp) / sizeof(char) + 1; i++)
-    {
-        envpGlobal[i] = envp[i];
-    }
 
     start = clock();
 
@@ -787,8 +784,6 @@ int main(int argc, char **argv, char **envp)
     // SIGNAL
     signal(SIGINT, sigint_handler);
     signal(SIGCHLD, sigchild_handler);
-
-
 
     size_t mode_idx = 1;
 
