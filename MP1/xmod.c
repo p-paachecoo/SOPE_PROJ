@@ -75,15 +75,13 @@ void sigint_handler(int signumber)
     {
         usleep(500000);
         char answer;
-        int cycle = 0;
         printf("Should the program terminate? (y/n)\n");
-        while (cycle == 0)
+        while (1)
         {
             answer = getchar();
             if (answer == 'y')
             {
                 printf("Terminated\n");
-                cycle = 1;
                 for (int i = 0; i < size; i++)
                 {
                     stop = clock();
@@ -111,7 +109,6 @@ void sigint_handler(int signumber)
                     end_sig_print(elapsed_time, pid, "SIGNAL_SENT", sig);
                     kill(pidno[i], 18);
                 }
-                cycle = 1;
                 return;
             }
         }
@@ -524,59 +521,64 @@ void changePermissionsOfWholeDir(char *Dir, char **argv, char *permissions)
     DIR *dirpath = opendir(Dir);
     int contentInDir = 0;
 
-    while ((dp = readdir(dirpath)) != NULL)
-    { // Go trough whole Dir recursively fork and call iself with exec with new path (Dir+dp->d_name)
+    if (dirpath != NULL)
+    {
+        while ((dp = readdir(dirpath)) != NULL)
+        { // Go trough whole Dir recursively fork and call iself with exec with new path (Dir+dp->d_name)
 
-        if ((dp->d_name != NULL) && (strcmp(dp->d_name, "..") != 0) && (strcmp(dp->d_name, ".") != 0))
-        {
-
-            contentInDir = 1;
-            char *newPathTemp = concat(Dir, "/");
-            char *newPath = concat(newPathTemp, dp->d_name);
-            char *newArgv[argvSize];
-
-            for (int i = 0; i < argvSize; i++)
+            if ((dp->d_name != NULL) && (strcmp(dp->d_name, "..") != 0) && (strcmp(dp->d_name, ".") != 0))
             {
-                if (i == fileNamepos)
-                    newArgv[i] = newPath;
-                else
+
+                contentInDir = 1;
+                char *newPathTemp = concat(Dir, "/");
+                char *newPath = "";
+                if (newPathTemp != NULL)
+                    newPath = concat(newPathTemp, dp->d_name);
+                char *newArgv[argvSize];
+
+                for (int i = 0; i < argvSize; i++)
                 {
-                    newArgv[i] = argv[i];
+                    if (i == fileNamepos)
+                        newArgv[i] = newPath;
+                    else
+                    {
+                        newArgv[i] = argv[i];
+                    }
                 }
-            }
-            if (changePermissionsOfFile(newPath, permissions))
-            {
-                stop = clock();
-                double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
-                pid_t pid = getpid();
-                print_int(elapsed_time, pid, "ERROR", 1);
-            }
-
-            if (isDirectory(newPath))
-            {
-                if (fork() == 0)
+                if (changePermissionsOfFile(newPath, permissions))
                 {
                     stop = clock();
-                    char *inf = malloc(strlen(*argv) + 1);
-                    snprintf(inf, strlen(*argv) + 1, "%s", *argv);
                     double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
                     pid_t pid = getpid();
-                    print_str(elapsed_time, pid, "PROC_CREAT", inf);
+                    print_int(elapsed_time, pid, "ERROR", 1);
+                }
 
-                    if (execve("./xmod", newArgv, envpGlobal) == -1)
+                if (isDirectory(newPath))
+                {
+                    if (fork() == 0)
                     {
-                        //printf("returned -1 on execve, value of error: %d and content: %s\n", errno, strerror(errno));
-                        printf("returned -1 on execve, value of error: %d\n", errno);
                         stop = clock();
+                        char *inf = malloc(strlen(*argv) + 1);
+                        snprintf(inf, strlen(*argv) + 1, "%s", *argv);
                         double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
                         pid_t pid = getpid();
-                        print_int(elapsed_time, pid, "ERROR", 1);
-                        exit(1);
+                        print_str(elapsed_time, pid, "PROC_CREAT", inf);
+
+                        if (execve("./xmod", newArgv, envpGlobal) == -1)
+                        {
+                            //printf("returned -1 on execve, value of error: %d and content: %s\n", errno, strerror(errno));
+                            printf("returned -1 on execve, value of error: %d\n", errno);
+                            stop = clock();
+                            double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+                            pid_t pid = getpid();
+                            print_int(elapsed_time, pid, "ERROR", 1);
+                            exit(1);
+                        }
                     }
                 }
             }
+            // parent simply continues
         }
-        // parent simply continues
     }
     (void)closedir(dirpath);
 
@@ -683,7 +685,7 @@ int changePermissionsOfFile(char *file, char *permissions)
             pid_t pid = getpid();
             print_str(elapsed_time, pid, "FILE_MODF", inf);
         }
-        else if (!(op.v && op.R && op.c))
+        else if (!op.R)
         {
             char *inf = malloc(strlen(file) + 15);
             snprintf(inf, strlen(file) + 15, "%s : %04o : %04o", file, curr_perm, command);
