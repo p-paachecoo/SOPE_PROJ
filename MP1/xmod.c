@@ -28,9 +28,9 @@ void sigint_handler(int signumber)
     sprintf(sig, "%i", signumber);
     end_sig_print(elapsed_time, pid, "SIGNAL_RECV", sig);
 
-    fprintf(stderr, "\nReceived signal %d!\n", signumber);
+    //fprintf(stderr, "\nReceived signal %d!\n", signumber);
 
-    printf("%10s | %10s | %10s | %10s\n", "pid", "fich/dir", "nftot", "nfmod");
+    //printf("%10s | %10s | %10s | %10s\n", "pid", "fich/dir", "nftot", "nfmod");
     printf("%10d | %10s | %10d | %10d\n", getpid(), info.originalFileDir,
            info.totalFiles, info.totalMod);
 
@@ -57,17 +57,20 @@ void sigint_handler(int signumber)
 
 void print_int(double instant, pid_t pid, char event[], int info)
 {
-    if(fileopen == true) fprintf(f_ptr, "%f – %d – %s – %i\n", fabs(instant), pid, event, info);
+    if (fileopen == true)
+        fprintf(f_ptr, "%f – %d – %s – %i\n", fabs(instant), pid, event, info);
 }
 
 void print_str(double instant, pid_t pid, char event[], char info[])
 {
-    if(fileopen == true) fprintf(f_ptr, "%f ; %d ; %s ; %s\n", fabs(instant), pid, event, info);
+    if (fileopen == true)
+        fprintf(f_ptr, "%f ; %d ; %s ; %s\n", fabs(instant), pid, event, info);
 }
 
 void end_sig_print(double instant, pid_t pid, char event[], char info[])
 {
-    if(fileopen == true) fprintf(f_ptr,"%f ; %i ; %s ; %s\n", instant, pid, event, info);
+    if (fileopen == true)
+        fprintf(f_ptr, "%f ; %i ; %s ; %s\n", instant, pid, event, info);
 }
 
 int make_command_from_text_mode(char *mode, unsigned int *command)
@@ -391,8 +394,9 @@ int changePermissionsOfFileDir(char *fileDir, char *permissions, char **argv)
         if (isDir)
         {
             int forkStatus;
-            if (wait(&forkStatus) < 0) // Reunite forks
-                perror("Fork Status indicates error!\n");
+            while (wait(&forkStatus) > 0)
+                ; // this way, the father waits for all the child processes
+            printf("Waited: %s\n", fileDir);
         }
     }
 
@@ -459,14 +463,16 @@ int changePermissionsOfFile(char *file, char *permissions)
     struct stat buffer;
     if (stat(file, &buffer) != 0)
     {
-        if (op.v) {
+        if (op.v)
+        {
             optionV_print_failure(file, 0, 0);
             stop = clock();
             double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
             pid_t pid = getpid();
             print_int(elapsed_time, pid, "ERROR", 1);
         }
-        else if (op.c) {
+        else if (op.c)
+        {
             optionC_print_failure(file);
             stop = clock();
             double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
@@ -506,14 +512,16 @@ int changePermissionsOfFile(char *file, char *permissions)
     if (chmod(file, command) != 0)
     {
         perror("chmod() error");
-        if (op.v){
+        if (op.v)
+        {
             optionV_print_failure(file, curr_perm, command);
             stop = clock();
             double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
             pid_t pid = getpid();
             print_int(elapsed_time, pid, "ERROR", 1);
         }
-        else if (op.c){
+        else if (op.c)
+        {
             optionC_print_failure(file);
             stop = clock();
             double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
@@ -524,23 +532,29 @@ int changePermissionsOfFile(char *file, char *permissions)
     }
     else
     {
-        if (op.v || op.c){
-            optionV_C_print_success(file, curr_perm, command);
-            char inf[33];
-            sprintf(inf, "%s : %04o : %04o", file, curr_perm, command);
-            stop = clock();
-            double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
-            pid_t pid = getpid();
-            print_str(elapsed_time, pid, "FILE_MODF", inf);
+        info.totalFiles++;
+        if (curr_perm != command){
+            info.totalMod++;
         }
-        else if(!(op.v && op.R && op.c)){
-            char inf[33];
-            sprintf(inf, "%s : %04o : %04o", file, curr_perm, command);
-            stop = clock();
-            double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
-            pid_t pid = getpid();
-            print_str(elapsed_time, pid, "FILE_MODF", inf);
-        }
+            if (op.v || op.c)
+            {
+                optionV_C_print_success(file, curr_perm, command);
+                char inf[33];
+                sprintf(inf, "%s : %04o : %04o", file, curr_perm, command);
+                stop = clock();
+                double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+                pid_t pid = getpid();
+                print_str(elapsed_time, pid, "FILE_MODF", inf);
+            }
+            else if (!(op.v && op.R && op.c))
+            {
+                char inf[33];
+                sprintf(inf, "%s : %04o : %04o", file, curr_perm, command);
+                stop = clock();
+                double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+                pid_t pid = getpid();
+                print_str(elapsed_time, pid, "FILE_MODF", inf);
+            }
     }
 
     return 0;
@@ -582,6 +596,9 @@ void optionV_print_failure(char *filename, unsigned int octalModePrevious, unsig
 
 int main(int argc, char **argv, char **envp)
 {
+    info.totalFiles = 0;
+    info.totalMod = 0;
+
     envpGlobal = envp;
     char *logFileName = getenv("LOG_FILENAME");
     envpGlobal[sizeof(envp) / sizeof(char)] = logFileName;
@@ -596,7 +613,8 @@ int main(int argc, char **argv, char **envp)
     {
         printf("No LOG_FILENAME setted. No logs will be registered\n");
     }
-    else {
+    else
+    {
         f_ptr = fopen(getenv("LOG_FILENAME"), "w");
         fileopen = true;
     }
@@ -607,7 +625,7 @@ int main(int argc, char **argv, char **envp)
     double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
     pid_t pid = getpid();
     print_str(elapsed_time, pid, "PROC_CREAT", inf);
-    
+
     if (argc < 3)
     {
         printf("Usage:\nxmod [OPTIONS] MODE FILE/DIR\n");
@@ -636,15 +654,15 @@ int main(int argc, char **argv, char **envp)
     sigset_t smask; // defines signals to block while func() is running
                     // prepare struct sigaction
 
-    if (sigemptyset(&smask) == -1) // block no signal
-        perror("sigsetfunctions");
+    // if (sigemptyset(&smask) == -1) // block no signal
+    //     perror("sigsetfunctions");
 
-    new.sa_handler = sigint_handler;
-    new.sa_mask = smask;
-    new.sa_flags = 0; // usually works
+    // new.sa_handler = sigint_handler;
+    // new.sa_mask = smask;
+    // new.sa_flags = 0; // usually works
 
-    if (sigaction(SIGUSR1, &new, &old) == -1)
-        perror("sigaction");
+    // if (sigaction(SIGUSR1, &new, &old) == -1)
+    //     perror("sigaction");
 
     size_t mode_idx = 1;
 
@@ -677,14 +695,18 @@ int main(int argc, char **argv, char **envp)
         return -1;
     }
     fileNamepos = mode_idx + 1;
+    info.originalFileDir = argv[mode_idx + 1];
     changePermissionsOfFileDir(argv[mode_idx + 1], argv[mode_idx], argv);
 
     stop = clock();
     elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
     pid = getpid();
     print_int(elapsed_time, pid, "EXIT", 0);
-    
-    if(fileopen == true) fclose(f_ptr);
+
+    if (fileopen == true)
+        fclose(f_ptr);
+
+    pause();
 
     return 0;
 }
