@@ -463,7 +463,7 @@ int changePermissionsOfFileDir(char *fileDir, char *permissions, char **argv)
 
                 print_str(elapsed_time, pid, "PROC_CREAT", inf);
 
-                changePermissionsOfWholeDir(fileDir, argv);
+                changePermissionsOfWholeDir(fileDir, argv, permissions);
             }
         }
     }
@@ -483,14 +483,13 @@ int changePermissionsOfFileDir(char *fileDir, char *permissions, char **argv)
             int forkStatus;
             while (wait(&forkStatus) > 0)
                 ; // this way, the father waits for all the child processes
-            
         }
     }
 
     return 0;
 }
 
-void changePermissionsOfWholeDir(char *Dir, char **argv)
+void changePermissionsOfWholeDir(char *Dir, char **argv, char* permissions)
 {
     struct dirent *dp;
     DIR *dirpath = opendir(Dir);
@@ -521,24 +520,40 @@ void changePermissionsOfWholeDir(char *Dir, char **argv)
                 }
             }
 
-            pid_t pid = fork();
-            if (pid == 0)
+            if (!isDirectory(newPath))
             {
-                stop = clock();
-                char *inf = malloc(strlen(*argv) + 1);
-                snprintf(inf, strlen(*argv) + 1, "%s", *argv);
-                double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
-                print_str(elapsed_time, pid, "PROC_CREAT", inf);
-
-                if (execve("./xmod", newArgv, envpGlobal) == -1)
+                printf("Changing File: %s\n", newPath);
+                if (changePermissionsOfFile(newPath, permissions))
                 {
-                    //printf("returned -1 on execve, value of error: %d and content: %s\n", errno, strerror(errno));
-                    printf("returned -1 on execve, value of error: %d\n", errno);
                     stop = clock();
                     double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
                     pid_t pid = getpid();
                     print_int(elapsed_time, pid, "ERROR", 1);
-                    exit(1);
+                }
+            }
+            else
+            {
+                printf("Altering Dir: %s\n", newPath);
+
+                pid_t pid = fork();
+                if (pid == 0)
+                {
+                    stop = clock();
+                    char *inf = malloc(strlen(*argv) + 1);
+                    snprintf(inf, strlen(*argv) + 1, "%s", *argv);
+                    double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+                    print_str(elapsed_time, pid, "PROC_CREAT", inf);
+
+                    if (execve("./xmod", newArgv, envpGlobal) == -1)
+                    {
+                        //printf("returned -1 on execve, value of error: %d and content: %s\n", errno, strerror(errno));
+                        printf("returned -1 on execve, value of error: %d\n", errno);
+                        stop = clock();
+                        double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+                        pid_t pid = getpid();
+                        print_int(elapsed_time, pid, "ERROR", 1);
+                        exit(1);
+                    }
                 }
             }
         }
