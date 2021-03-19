@@ -99,7 +99,7 @@ int isDirectory(const char *path);
 
 int changePermissionsOfFileDir(char *fileDir, char *permissions, char **argv);
 
-void changePermissionsOfWholeDir(char *Dir, char** argv, char* permissions);
+void changePermissionsOfWholeDir(char *Dir, char **argv, char *permissions);
 
 int changePermissionsOfFile(char *file, char *permissions);
 

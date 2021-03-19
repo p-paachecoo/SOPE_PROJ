@@ -75,15 +75,15 @@ void sigint_handler(int signumber)
     {
         usleep(500000);
         char answer;
-        int cicle = 0;
+        int cycle = 0;
         printf("Should the program terminate? (y/n)\n");
-        while (cicle == 0)
+        while (cycle == 0)
         {
             answer = getchar();
             if (answer == 'y')
             {
                 printf("Terminated\n");
-                cicle = 1;
+                cycle = 1;
                 for (int i = 0; i < size; i++)
                 {
                     stop = clock();
@@ -111,7 +111,7 @@ void sigint_handler(int signumber)
                     end_sig_print(elapsed_time, pid, "SIGNAL_SENT", sig);
                     kill(pidno[i], 18);
                 }
-                cicle = 1;
+                cycle = 1;
                 return;
             }
         }
@@ -479,15 +479,14 @@ int changePermissionsOfFileDir(char *fileDir, char *permissions, char **argv)
         if (isDir)
         { // Fork and changePermissionsOfWholeDir of children
 
-            pid_t pid = fork();
-            if (pid == 0)
+            if (fork() == 0)
             { // children -> changePermissionsOfWholeDir(fileDir)
 
                 stop = clock();
                 char *inf = malloc(strlen(*argv) + 1);
                 snprintf(inf, strlen(*argv) + 1, "%s", *argv);
                 double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
-
+                pid_t pid = getpid();
                 print_str(elapsed_time, pid, "PROC_CREAT", inf);
 
                 changePermissionsOfWholeDir(fileDir, argv, permissions);
@@ -559,16 +558,14 @@ void changePermissionsOfWholeDir(char *Dir, char **argv, char *permissions)
 
             if (isDirectory(newPath))
             {
-
-                pid_t pid = fork();
-                if (pid == 0)
+                if (fork() == 0)
                 {
                     stop = clock();
                     char *inf = malloc(strlen(*argv) + 1);
                     snprintf(inf, strlen(*argv) + 1, "%s", *argv);
                     double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+                    pid_t pid = getpid();
                     print_str(elapsed_time, pid, "PROC_CREAT", inf);
-
 
                     if (execve("./xmod", newArgv, envpGlobal) == -1)
                     {
@@ -746,7 +743,6 @@ int main(int argc, char **argv, char **envp)
     envpGlobal = envp;
 
     start = clock();
-    
 
     int pidno[64];
     int size;
@@ -761,7 +757,9 @@ int main(int argc, char **argv, char **envp)
         {
             fileopen = true;
         }
-    } else {
+    }
+    else
+    {
         if ((f_ptr = fopen(getenv("LOG_FILENAME"), "a")) == NULL)
         {
             printf("No LOG_FILENAME set. No logs will be registered\n");
@@ -769,7 +767,7 @@ int main(int argc, char **argv, char **envp)
         else
         {
             fileopen = true;
-        } 
+        }
     }
 
     char *inf = malloc(strlen(*argv) + 1);
