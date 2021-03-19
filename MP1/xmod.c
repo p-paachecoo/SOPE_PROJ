@@ -25,7 +25,7 @@ void sigint_handler(int signumber)
     double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
     pid_t pid = getpid();
     char sig[10];
-    sprintf(sig, "%i", signumber);
+    snprintf(sig, 10, "%i", signumber);
     end_sig_print(elapsed_time, pid, "SIGNAL_RECV", sig);
 
     //fprintf(stderr, "\nReceived signal %d!\n", signumber);
@@ -55,12 +55,13 @@ void sigint_handler(int signumber)
     }
 }
 
-void sigchild_handler(int signumber){
+void sigchild_handler(int signumber)
+{
     stop = clock();
     double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
     pid_t pid = getpid();
     char sig[10];
-    sprintf(sig, "%i", signumber);
+    snprintf(sig, 10, "%i", signumber);
     end_sig_print(elapsed_time, pid, "SIGNAL_RECV", sig);
 }
 
@@ -395,26 +396,25 @@ int changePermissionsOfFileDir(char *fileDir, char *permissions, char **argv)
         isDir = isDirectory(fileDir);
         if (isDir)
         { // Fork and changePermissionsOfWholeDir of children
-            
+
             pid_t pid = fork();
             if (pid == 0)
             { // children -> changePermissionsOfWholeDir(fileDir)
 
                 stop = clock();
-                char inf[100];
-                sprintf(inf, "%s", *argv);
+                char *inf = malloc(strlen(*argv) + 1);
+                snprintf(inf, strlen(*argv) + 1, "%s", *argv);
                 double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
-                
+
                 print_str(elapsed_time, pid, "PROC_CREAT", inf);
 
                 changePermissionsOfWholeDir(fileDir, argv);
-
-
             }
         }
     }
     // parent ->
-    if (changePermissionsOfFile(fileDir, permissions)){
+    if (changePermissionsOfFile(fileDir, permissions))
+    {
         stop = clock();
         double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
         pid_t pid = getpid();
@@ -470,8 +470,8 @@ void changePermissionsOfWholeDir(char *Dir, char **argv)
             if (pid == 0)
             {
                 stop = clock();
-                char inf[100];
-                sprintf(inf, "%s", *argv);
+                char *inf = malloc(strlen(*argv) + 1);
+                snprintf(inf, strlen(*argv) + 1, "%s", *argv);
                 double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
                 print_str(elapsed_time, pid, "PROC_CREAT", inf);
 
@@ -495,8 +495,8 @@ void changePermissionsOfWholeDir(char *Dir, char **argv)
     {
         // parent -> wait() for children and check if all good before exiting
         int forkStatus;
-        while (wait(&forkStatus) > 0); // this way, the father waits for all the child processes
-
+        while (wait(&forkStatus) > 0)
+            ; // this way, the father waits for all the child processes
     }
     exit(0);
 }
@@ -576,28 +576,29 @@ int changePermissionsOfFile(char *file, char *permissions)
     else
     {
         info.totalFiles++;
-        if (curr_perm != command){
+        if (curr_perm != command)
+        {
             info.totalMod++;
         }
-            if (op.v || op.c)
-            {
-                optionV_C_print_success(file, curr_perm, command);
-                char inf[33];
-                sprintf(inf, "%s : %04o : %04o", file, curr_perm, command);
-                stop = clock();
-                double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
-                pid_t pid = getpid();
-                print_str(elapsed_time, pid, "FILE_MODF", inf);
-            }
-            else if (!(op.v && op.R && op.c))
-            {
-                char inf[33];
-                sprintf(inf, "%s : %04o : %04o", file, curr_perm, command);
-                stop = clock();
-                double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
-                pid_t pid = getpid();
-                print_str(elapsed_time, pid, "FILE_MODF", inf);
-            }
+        if (op.v || op.c)
+        {
+            optionV_C_print_success(file, curr_perm, command);
+            char *inf = malloc(strlen(file) + 15);
+            snprintf(inf, strlen(file) + 15, "%s : %04o : %04o", file, curr_perm, command);
+            stop = clock();
+            double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+            pid_t pid = getpid();
+            print_str(elapsed_time, pid, "FILE_MODF", inf);
+        }
+        else if (!(op.v && op.R && op.c))
+        {
+            char *inf = malloc(strlen(file) + 15);
+            snprintf(inf, strlen(file) + 15, "%s : %04o : %04o", file, curr_perm, command);
+            stop = clock();
+            double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+            pid_t pid = getpid();
+            print_str(elapsed_time, pid, "FILE_MODF", inf);
+        }
     }
 
     return 0;
@@ -654,7 +655,7 @@ int main(int argc, char **argv, char **envp)
 
     if ((f_ptr = fopen(getenv("LOG_FILENAME"), "w")) == NULL)
     {
-        printf("No LOG_FILENAME setted. No logs will be registered\n");
+        printf("No LOG_FILENAME set. No logs will be registered\n");
     }
     else
     {
@@ -662,8 +663,8 @@ int main(int argc, char **argv, char **envp)
         fileopen = true;
     }
 
-    char inf[100];
-    sprintf(inf, "%s", *argv);
+    char *inf = malloc(strlen(*argv) + 1);
+    snprintf(inf, strlen(*argv) + 1, "%s", *argv);
     stop = clock();
     double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
     pid_t pid = getpid();
