@@ -1,5 +1,5 @@
-#ifndef MP1_XMOD_H_
-#define MP1_XMOD_H_
+#ifndef MP1_HEADER_XMOD_H_
+#define MP1_HEADER_XMOD_H_
 #define _XOPEN_SOURCE
 
 /*
@@ -113,4 +113,4 @@ int make_command_from_octal_mode(char *mode, unsigned int *command);
 
 void octal_to_text(unsigned int oct, char *text);
 
-#endif  // MP1_XMOD_H_
+#endif  // MP1_HEADER_XMOD_H_
