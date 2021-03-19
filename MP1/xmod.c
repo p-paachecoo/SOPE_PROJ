@@ -20,19 +20,20 @@ char *concat(const char *s1, const char *s2)
 int isOriginalProcess(int *pidno, int *size)
 {
     char pidline[1024];
+    char *saveptr;
     char *pid2;
     int i = 0;
 
     FILE *fp = popen("pidof xmod", "r");
     fgets(pidline, 1024, fp);
 
-    pid2 = strtok(pidline, " ");
+    pid2 = strtok_r(pidline, " ", &saveptr);
     while (pid2 != NULL)
     {
 
         pidno[i] = atoi(pid2);
         //printf("%d\n", pidno[i]);
-        pid2 = strtok(NULL, " ");
+        pid2 = strtok_r(NULL, " ", &saveptr);
         i++;
     }
     *size = i;
@@ -82,8 +83,17 @@ void sigint_handler(int signumber)
                 cicle = 1;
                 for (int i = 0; i < size; i++)
                 {
+                    stop = clock();
+                    double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+                    char sig[30];
+                    snprintf(sig, sizeof(sig), "signal : %i", pidno[i]);
+                    end_sig_print(elapsed_time, pid, "SIGNAL_SENT", sig);
                     kill(pidno[i], 9);
                 }
+                stop = clock();
+                double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+                pid_t pid = getpid();
+                print_int(elapsed_time, pid, "PROC_EXIT", 0);
                 exit(0);
             }
             else if (answer == 'n')
@@ -91,6 +101,11 @@ void sigint_handler(int signumber)
                 printf("Execution resumed\n");
                 for (int i = 0; i < size; i++)
                 {
+                    stop = clock();
+                    double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+                    char sig[30];
+                    snprintf(sig, sizeof(sig), "signal : %d", pidno[i]);
+                    end_sig_print(elapsed_time, pid, "SIGNAL_SENT", sig);
                     kill(pidno[i], 18);
                 }
                 cicle = 1;
@@ -100,6 +115,12 @@ void sigint_handler(int signumber)
     }
     else
     {
+        stop = clock();
+        double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+        pid_t pid = getpid();
+        char sig[30];
+        snprintf(sig, sizeof(sig), "signal : %d", pid);
+        end_sig_print(elapsed_time, pid, "SIGNAL_SENT", sig);
         kill(getpid(), 19);
     }
 }
@@ -123,7 +144,7 @@ void sigchild_handler(int signumber)
 void print_int(double instant, pid_t pid, char event[], int info)
 {
     if (fileopen == true)
-        fprintf(f_ptr, "%f – %d – %s – %i\n", fabs(instant), pid, event, info);
+        fprintf(f_ptr, "%f ; %d ; %s ; %i\n", fabs(instant), pid, event, info);
 }
 
 void print_str(double instant, pid_t pid, char event[], char info[])
@@ -568,6 +589,10 @@ void changePermissionsOfWholeDir(char *Dir, char **argv, char* permissions)
         while (wait(&forkStatus) > 0)
             ; // this way, the father waits for all the child processes
     }
+    stop = clock();
+    double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+    pid_t pid = getpid();
+    print_int(elapsed_time, pid, "PROC_EXIT", 0);
     exit(0);
 }
 

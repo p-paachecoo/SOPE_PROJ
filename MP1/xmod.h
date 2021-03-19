@@ -13,6 +13,7 @@ Necessary includes
 #define __USE_POSIX2
 #include <ctype.h>
 #include <dirent.h>
+#include <errno.h>
 #include <math.h>
 #include <signal.h>
 #include <stdbool.h>
@@ -21,16 +22,17 @@ Necessary includes
 #include <string.h>
 #include <sys/wait.h>
 #include <time.h>
-#include <errno.h>
-#include <unistd.h>
 
-#define SIGHUP 1  /* Hangup the process */
-#define SIGINT 2  /* Interrupt the process */
-#define SIGQUIT 3 /* Quit the process */
-#define SIGILL 4  /* Illegal instruction. */
-#define SIGTRAP 5 /* Trace trap. */
-#define SIGABRT 6 /* Abort. */
+#define SIGHUP 1   /* Hangup the process */
+#define SIGINT 2   /* Interrupt the process */
+#define SIGQUIT 3  /* Quit the process */
+#define SIGILL 4   /* Illegal instruction. */
+#define SIGTRAP 5  /* Trace trap. */
+#define SIGABRT 6  /* Abort. */
+#define SIGKILL 9  /* Kill */
 #define SIGCHLD 17 /* Child */
+#define SIGCONT 18 /* Continue */
+#define SIGSTOP 19 /* Stop */
 
 typedef enum {
     OWNER,
@@ -64,9 +66,9 @@ typedef struct {
 } options;
 
 int isOriginalProcess();
-extern int usleep (__useconds_t __useconds);
+extern int usleep(__useconds_t __useconds);
 
-char* concat(const char *s1, const char *s2);
+char *concat(const char *s1, const char *s2);
 
 /*
 * Info printing for integers
@@ -95,7 +97,7 @@ void optionV_print_failure(char *filename, unsigned int octalModePrevious,
 
 int isDirectory(const char *path);
 
-int changePermissionsOfFileDir(char *fileDir, char *permissions, char** argv);
+int changePermissionsOfFileDir(char *fileDir, char *permissions, char **argv);
 
 void changePermissionsOfWholeDir(char *Dir, char** argv, char* permissions);
 
