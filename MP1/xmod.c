@@ -5,6 +5,19 @@ FILE *f_ptr;
 clock_t start, stop;
 options op;
 bool fileopen = false;
+int fileNamepos;
+int argvSize;
+char **envpGlobal;
+extern int errno;
+
+char *concat(const char *s1, const char *s2)
+{
+    char *result = malloc(strlen(s1) + strlen(s2) + 1); // +1 for the null-terminator
+    // in real code you would check for errors in malloc here
+    strcpy(result, s1);
+    strcat(result, s2);
+    return result;
+}
 
 void sigint_handler(int signumber)
 {
@@ -354,21 +367,18 @@ int isDirectory(const char *path)
     return S_ISDIR(statbuf.st_mode);
 }
 
-int changePermissionsOfFileDir(char *fileDir, char *permissions)
+int changePermissionsOfFileDir(char *fileDir, char *permissions, char **argv)
 {
+    int isDir = 0;
     if (op.R)
     {
-        int isDir = isDirectory(fileDir);
+        isDir = isDirectory(fileDir);
         if (isDir)
         { // Fork and changePermissionsOfWholeDir of children
 
             if (fork() == 0)
             { // children -> changePermissionsOfWholeDir(fileDir)
-                changePermissionsOfWholeDir(fileDir, permissions);
-                printf("should not have reached here");
-            }
-            else
-            {
+                changePermissionsOfWholeDir(fileDir, argv);
             }
         }
     }
@@ -378,30 +388,69 @@ int changePermissionsOfFileDir(char *fileDir, char *permissions)
 
     if (op.R)
     {
-        int forkStatus;
-        wait(&forkStatus);                        // Reunite forks
-        printf("Forks rejoined: %d", forkStatus); // Check if all good
+        if (isDir)
+        {
+            int forkStatus;
+            if (wait(&forkStatus) < 0) // Reunite forks
+                perror("Fork Status indicates error!\n");
+        }
     }
 
     return 0;
 }
 
-void changePermissionsOfWholeDir(char *Dir, char *permissions)
+void changePermissionsOfWholeDir(char *Dir, char **argv)
 {
     struct dirent *dp;
     DIR *dirpath = opendir(Dir);
+    int contentInDir = 0;
+
     while ((dp = readdir(dirpath)) != NULL)
-    { // Go trough whole Dir
-        if (isDirectory(dp->d_name))
+    { // Go trough whole Dir recursively fork and call iself with exec with new path (Dir+dp->d_name)
+
+        if ((dp->d_name != NULL) && (strcmp(dp->d_name, "..") != 0) && (strcmp(dp->d_name, ".") != 0))
         {
-            // if a Dir is found, recursively fork and call iself with exec with new path (Dir+dp->d_name)
+
+            contentInDir = 1;
+            char *newPathTemp = concat(Dir, "/");
+            char *newPath = concat(newPathTemp, dp->d_name);
+            char *newArgv[argvSize];
+
+            for (int i = 0; i < argvSize; i++)
+            {
+                if (newArgv[i] == NULL)
+                {
+                    break;
+                }
+                if (i == fileNamepos)
+                    newArgv[i] = newPath;
+                else
+                {
+                    newArgv[i] = argv[i];
+                }
+            }
+
+            if (fork() == 0)
+            {
+                if (execve("./xmod", newArgv, envpGlobal) == -1)
+                {
+                    //printf("returned -1 on execve, value of error: %d and content: %s\n", errno, strerror(errno));
+                    printf("returned -1 on execve, value of error: %d\n", errno);
+                    exit(1);
+                }
+            }
         }
         // parent simply continues
     }
     (void)closedir(dirpath);
 
-    // parent -> wait() for children and check if all good before exiting
-
+    if (contentInDir)
+    {
+        // parent -> wait() for children and check if all good before exiting
+        int forkStatus;
+        while (wait(&forkStatus) > 0)
+            ; // this way, the father waits for all the child processes
+    }
     exit(0);
 }
 
@@ -454,7 +503,6 @@ int changePermissionsOfFile(char *file, char *permissions)
             return -1;
         }
     }
-
     if (chmod(file, command) != 0)
     {
         perror("chmod() error");
@@ -534,6 +582,14 @@ void optionV_print_failure(char *filename, unsigned int octalModePrevious, unsig
 
 int main(int argc, char **argv, char **envp)
 {
+    envpGlobal = envp;
+    char *logFileName = getenv("LOG_FILENAME");
+    envpGlobal[sizeof(envp) / sizeof(char)] = logFileName;
+    for (int i = 0; i < sizeof(envp) / sizeof(char) + 1; i++)
+    {
+        envpGlobal[i] = envp[i];
+    }
+
     start = clock();
 
     if ((f_ptr = fopen(getenv("LOG_FILENAME"), "w")) == NULL)
@@ -561,6 +617,17 @@ int main(int argc, char **argv, char **envp)
         pid_t pid = getpid();
         print_int(elapsed_time, pid, "ERROR", 1);
         return -1;
+    }
+
+    argvSize = 0;
+    for (int i = 0; i < sizeof(argv) / sizeof(char); i++)
+    {
+
+        argvSize++;
+        if (argv[i] == NULL)
+        {
+            break;
+        }
     }
 
     // SIGNAL
@@ -609,8 +676,8 @@ int main(int argc, char **argv, char **envp)
         print_int(elapsed_time, pid, "ERROR", 1);
         return -1;
     }
-
-    changePermissionsOfFileDir(argv[mode_idx + 1], argv[mode_idx]);
+    fileNamepos = mode_idx + 1;
+    changePermissionsOfFileDir(argv[mode_idx + 1], argv[mode_idx], argv);
 
     stop = clock();
     elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;

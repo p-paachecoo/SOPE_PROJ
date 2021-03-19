@@ -20,6 +20,7 @@ Necessary includes
 #include <string.h>
 #include <sys/wait.h>
 #include <time.h>
+#include <errno.h>
 
 #define SIGHUP 1  /* Hangup the process */
 #define SIGINT 2  /* Interrupt the process */
@@ -59,6 +60,8 @@ typedef struct {
     bool c;
 } options;
 
+char* concat(const char *s1, const char *s2);
+
 /*
 * Info printing for integers
 * ie: PROC_EXIT and SIGNAL_RECV
@@ -86,9 +89,9 @@ void optionV_print_failure(char *filename, unsigned int octalModePrevious,
 
 int isDirectory(const char *path);
 
-int changePermissionsOfFileDir(char *fileDir, char *permissions);
+int changePermissionsOfFileDir(char *fileDir, char *permissions, char** argv);
 
-void changePermissionsOfWholeDir(char *Dir, char *permissions);
+void changePermissionsOfWholeDir(char *Dir, char** argv);
 
 int changePermissionsOfFile(char *file, char *permissions);
 
