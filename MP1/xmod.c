@@ -17,7 +17,8 @@ char *concat(const char *s1, const char *s2)
     return result;
 }
 
-int isOriginalProcess(int* pidno, int* size ){
+int isOriginalProcess(int *pidno, int *size)
+{
     char pidline[1024];
     char *pid2;
     int i = 0;
@@ -60,8 +61,8 @@ void sigint_handler(int signumber)
 
     int pidno[64];
     int size;
-    int original  = isOriginalProcess(pidno,&size);
-    
+    int original = isOriginalProcess(pidno, &size);
+
     usleep(300000);
     printf("%15d | %15s | %15d | %15d\n", getpid(), info.originalFileDir,
            info.totalFiles, info.totalMod);
@@ -79,31 +80,44 @@ void sigint_handler(int signumber)
             {
                 printf("Terminated\n");
                 cicle = 1;
-                for(int i = 0; i < size; i++){
-                    kill(pidno[i],9);
+                for (int i = 0; i < size; i++)
+                {
+                    kill(pidno[i], 9);
                 }
                 exit(0);
             }
             else if (answer == 'n')
             {
-                printf("Execution resumed\n"); //TO DO message others
+                printf("Execution resumed\n");
+                for (int i = 0; i < size; i++)
+                {
+                    kill(pidno[i], 18);
+                }
                 cicle = 1;
                 return;
             }
         }
-    } else {
-        sleep(10); //TO DO w8 for message
+    }
+    else
+    {
+        kill(getpid(), 19);
     }
 }
 
 void sigchild_handler(int signumber)
 {
-    stop = clock();
-    double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
-    pid_t pid = getpid();
-    char sig[10];
-    snprintf(sig, sizeof(sig), "%i", signumber);
-    end_sig_print(elapsed_time, pid, "SIGNAL_RECV", sig);
+    int pidno[64];
+    int size;
+    if (isOriginalProcess(pidno, &size))
+    {
+
+        stop = clock();
+        double elapsed_time = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+        pid_t pid = getpid();
+        char sig[10];
+        snprintf(sig, sizeof(sig), "%i", signumber);
+        end_sig_print(elapsed_time, pid, "SIGNAL_RECV", sig);
+    }
 }
 
 void print_int(double instant, pid_t pid, char event[], int info)
@@ -469,7 +483,7 @@ int changePermissionsOfFileDir(char *fileDir, char *permissions, char **argv)
             int forkStatus;
             while (wait(&forkStatus) > 0)
                 ; // this way, the father waits for all the child processes
-            printf("Waited: %s\n", fileDir);
+            
         }
     }
 
@@ -792,8 +806,6 @@ int main(int argc, char **argv, char **envp)
 
     if (fileopen == true)
         fclose(f_ptr);
-
-    pause();
 
     return 0;
 }
