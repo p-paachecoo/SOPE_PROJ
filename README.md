@@ -13,5 +13,6 @@ Semester: 2nd
   <tr>
     <th><a href="https://github.com/p-paachecoo"><b>Pedro Pacheco</b></a></th>
     <th><a href="https://github.com/MiNeves00"><b>Miguel Neves</b></a></th>
+    <th><a href="https://github.com/bersanots"><b>Bernardo Santos</b></a></th>
   </tr>
 </table>
