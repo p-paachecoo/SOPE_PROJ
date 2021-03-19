@@ -6,6 +6,7 @@ clock_t start, stop;
 options op;
 int fileNamepos;
 int argvSize;
+char **envpGlobal;
 extern int errno;
 
 char *concat(const char *s1, const char *s2)
@@ -399,7 +400,6 @@ void changePermissionsOfWholeDir(char *Dir, char **argv)
             char *newPath = concat(newPathTemp, dp->d_name);
             char *newArgv[argvSize];
 
-
             printf("NewArgs: %d", fileNamepos);
             for (int i = 0; i < argvSize; i++)
             {
@@ -421,7 +421,7 @@ void changePermissionsOfWholeDir(char *Dir, char **argv)
             if (fork() == 0)
             {
                 printf("Calling xmod on: %s\n", newArgv[fileNamepos]);
-                if (execve("./xmod", newArgv, NULL) == -1)
+                if (execve("./xmod", newArgv, envpGlobal) == -1)
                 {
                     //printf("returned -1 on execve, value of error: %d and content: %s\n", errno, strerror(errno));
                     printf("returned -1 on execve, value of error: %d\n", errno);
@@ -534,6 +534,19 @@ void optionV_print_failure(char *filename, unsigned int octalModePrevious,
 
 int main(int argc, char **argv, char **envp)
 {
+    envpGlobal = envp;
+
+    printf("NewEnvp: ");
+    char *logFileName = getenv("LOG_FILENAME");
+    envpGlobal[sizeof(envp) / sizeof(char)] = logFileName;
+    for (int i = 0; i < sizeof(envp) / sizeof(char) + 1; i++)
+    {
+
+        envpGlobal[i] = envp[i];
+
+        printf("%s, ", envpGlobal[i]);
+    }
+
     start = clock();
 
     if ((f_ptr = fopen(getenv("LOG_FILENAME"), "a")) == NULL)
