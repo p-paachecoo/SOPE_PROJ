@@ -1,6 +1,6 @@
 #Makefile for the project
 
-xmod: xmod.c xmod.h
+xmod: xmod.c header/xmod.h
 		gcc -Wall -o xmod xmod.c
 
 clean: 
