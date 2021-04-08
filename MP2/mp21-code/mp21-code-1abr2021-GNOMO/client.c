@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <string.h>
+#include <math.h>
 
 #include "client.h"
 
@@ -22,7 +23,6 @@ int main(int argc, char *argv[]) {
       printf("<-t nsecs> must be greater than 0\n");
       exit(1);
    }
-
 
    
    while ((fd_public = open (argv[2], O_WRONLY)) < 0); // synchronization... will block until fifo opened for reading
@@ -58,7 +58,7 @@ void* createRequests(){
 
    //Launch Cn request threads
    while(1){
-      usleep((rand() % 50 + 10)*1000); //sleep between 10 and 60ms
+      usleep((rand() % 50 + 30)*1000); //sleep between 10 and 60ms
       if ((err = pthread_create(&id, NULL, makeRequest, NULL)) != 0)
       {
          fprintf(stderr, "C0 thread: %s!\n", strerror(err));
@@ -73,18 +73,37 @@ void* createRequests(){
 //Request Threads -> Cn
 void* makeRequest(){
    printf("Making Request\n");
-
    time_t t;
    srand((unsigned) time(&t));
    int taskWeight = rand() % 8 + 1; //1-9 inclusive
 
+
+
+   int pid = getpid();
+   int sizePid = (int)((ceil(log10(pid))+1)*sizeof(char));
+   char pidString[sizePid];
+   sprintf(pidString, "%d.", pid);
+
+   int tid = pthread_self();
+   int sizeTid = (int)((ceil(log10(tid))+1)*sizeof(char));
+   char tidString[sizeTid];
+   sprintf(tidString, "%d", tid);
+
+   strcat(pidString,tidString);
+
+   char filePath[] = "/tmp/";
+   strcat(filePath,pidString);
+
    //Create Private FIFO
-   int np;
-   if (mkfifo("/tmp/np", 0666) < 0) // TO DO: Make private, change name
+   int fd_private;
+   int msg[1024];
+
+   if (mkfifo(filePath, 0666) < 0)
       perror("mkfifo");
-   while ((np = open("/tmp/np", O_WRONLY)) < 0); // synchronization...
-   write(np, "Hi, reader colleague!", 1+strlen("Hi, parent!"));
-   close(np);
+   while((fd_private = open(filePath, O_RDONLY)) < 0); // synchronization... will block until fifo opened for reading
+   printf("reading\n");
+   read(fd_private, msg, 256);
+   close(fd_private);
 
    pthread_exit(NULL);
 }
