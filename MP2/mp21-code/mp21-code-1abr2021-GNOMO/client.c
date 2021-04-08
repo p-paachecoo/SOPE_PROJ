@@ -13,27 +13,37 @@
 
 
 int main(int argc, char *argv[]) {
-   // printf() displays the string inside quotation
-
-   if(argc != 3){
-      printf("Wrong Arguments!\nUsage: c <-t nsecs> fifoname\n");
+   
+   //Check Args
+   if(argc != 4 || strcmp(argv[1],"-t") != 0){
+      printf("Usage: c <-t nsecs> fifoname\n");
       exit(1);
    }
-   if(atoi(argv[1]) <= 0){
+
+
+   if(atoi(argv[2]) <= 0){
       printf("<-t nsecs> must be greater than 0\n");
       exit(1);
    }
 
-   
-   while ((fd_public = open (argv[2], O_WRONLY)) < 0); // synchronization... will block until fifo opened for reading
+   //Start program life time countdown
+   int err;
+   pthread_t idTime;
+   if ((err = pthread_create(&idTime, NULL, timeCountdown ,argv[2])) != 0)
+   {
+      fprintf(stderr, "Main thread Countdown: %s!\n", strerror(err));
+      exit(-1);
+   }
+
+
+   while ((fd_public = open (argv[3], O_WRONLY)) < 0); // synchronization... will block until fifo opened for reading
    write(fd_public, "HELLO", 6);
    close(fd_public);
 
-   int err;
    pthread_t id;
    if ((err = pthread_create(&id, NULL, createRequests, NULL)) != 0)
    {
-      fprintf(stderr, "Main thread: %s!\n", strerror(err));
+      fprintf(stderr, "Main thread Create Request: %s!\n", strerror(err));
       exit(-1);
    }
 
@@ -105,5 +115,14 @@ void* makeRequest(){
    read(fd_private, msg, 256);
    close(fd_private);
 
+   pthread_exit(NULL);
+} 
+
+void* timeCountdown(void* time){
+   char* timeStr = time;
+   int timeInt = atoi(timeStr);
+   sleep(timeInt);
+   printf("KILL\n");
+   //TO DO actually Kill program
    pthread_exit(NULL);
 }
