@@ -2,4 +2,6 @@
 
 int fd_public;
 
-void* startRequests();
+void* createRequests();
+
+void* makeRequest();
