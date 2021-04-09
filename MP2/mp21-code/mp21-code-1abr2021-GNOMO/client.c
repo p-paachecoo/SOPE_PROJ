@@ -7,6 +7,7 @@
 #include <pthread.h>
 #include <string.h>
 #include <math.h>
+#include <signal.h>
 
 #include "client.h"
 
@@ -123,6 +124,6 @@ void* timeCountdown(void* time){
    int timeInt = atoi(timeStr);
    sleep(timeInt);
    printf("KILL\n");
-   //TO DO actually Kill program
+   exit(0);
    pthread_exit(NULL);
 }
