@@ -66,15 +66,16 @@ void *createRequests()
    pthread_t id;
 
    //Launch Cn request threads
-   while (1)
+   //while (1)
+   //{
+   usleep((rand() % 50 + 30) * 1000); //sleep between 10 and 60ms
+   if ((err = pthread_create(&id, NULL, makeRequest, NULL)) != 0)
    {
-      usleep((rand() % 50 + 30) * 1000); //sleep between 10 and 60ms
-      if ((err = pthread_create(&id, NULL, makeRequest, NULL)) != 0)
-      {
-         fprintf(stderr, "C0 thread: %s!\n", strerror(err));
-         exit(-1);
-      }
+      fprintf(stderr, "C0 thread: %s!\n", strerror(err));
+      exit(-1);
    }
+   sleep(10);
+   //}
 
    pthread_exit(NULL);
 }
@@ -86,7 +87,7 @@ void *makeRequest()
 
    int pid = getpid();
    int sizePid = (int)((ceil(log10(pid)) + 1) * sizeof(char));
-   char pidString[sizePid+1];
+   char pidString[sizePid + 1];
    sprintf(pidString, "%d.", pid);
 
    int tid = pthread_self();
@@ -129,39 +130,54 @@ void sendPublicMessage(int task)
    int i = rand() % 8 + 1; //1-9 inclusive
 
    int pid = getpid();
-   int tid = pthread_self();
-   int res = -1; //Client
+   unsigned long int tid = pthread_self();
+   int res = 1; //Client
+   int size_res = (int)((ceil(log10(res)) + 1) * sizeof(char));
+   char res_string[size_res];
+   sprintf(res_string, "%d", res);
+   printf("RES: %s\n", res_string);
 
    int size_i = (int)((ceil(log10(i)) + 1) * sizeof(char));
-   char i_string[size_i+1];
+   char i_string[size_i + 1];
    sprintf(i_string, "%d ", i);
    printf("I: %s\n", i_string);
 
    int size_task = (int)((ceil(log10(task)) + 1) * sizeof(char));
-   char task_string[size_task+1];
+   char task_string[size_task + 1];
    sprintf(task_string, "%d ", size_task);
    printf("TASK: %s\n", task_string);
 
    int size_pid = (int)((ceil(log10(pid)) + 1) * sizeof(char));
-   char pid_string[size_pid+1];
+   char pid_string[size_pid + 1];
    sprintf(pid_string, "%d ", pid);
-   printf("FD: %d\n", fd_public);
    printf("PID: %s\n", pid_string);
 
-   int size_tid = (int)((ceil(log10(tid)) + 1) * sizeof(char));
-   char tid_string[size_tid+1];
-   sprintf(tid_string, "%d ", tid);
-
-   int size_res = (int)((ceil(log10(res)) + 1) * sizeof(char));
-   char res_string[size_res];
-   sprintf(res_string, "%d", res);
+   unsigned long int size_tid = (unsigned long int)((ceil(log10(tid)) + 1) * sizeof(char));
+   char tid_string[size_tid + 1];
+   printf("SIZE TID: %lu\n", sizeof(tid));
+   sprintf(tid_string, "%lu ", tid);
+   printf("TID: %s\n", tid_string);
 
    strcat(i_string, task_string);
+   printf("CAT1: %s\n", i_string);
    strcat(i_string, pid_string);
+   printf("CAT2: %s\n", i_string);
+   
    strcat(i_string, tid_string);
-   strcat(i_string, res_string);
+   printf("CAT3: %s\n", i_string); 
 
-   write(fd_public, i_string, sizeof(i_string));
+   printf("RES: %s | %d\n", res_string, res);
+
+   int size_res2 = (int)((ceil(log10(res)) + 1) * sizeof(char));
+   char res_string2[size_res2];
+   sprintf(res_string2, "%d", res);
+   printf("RES2: %s\n", res_string2);
+   
+   printf("CAT3: %s\n", i_string);
+   strcat(i_string, res_string2);
+   printf("Message: %s\n", i_string);
+
+   //write(fd_public, i_string, sizeof(i_string));
 }
 
 void *timeCountdown(void *time)
