@@ -131,53 +131,47 @@ void sendPublicMessage(int task)
 
    int pid = getpid();
    unsigned long int tid = pthread_self();
-   int res = 1; //Client
-   int size_res = (int)((ceil(log10(res)) + 1) * sizeof(char));
-   char res_string[size_res];
-   sprintf(res_string, "%d", res);
-   printf("RES: %s\n", res_string);
+   int res = -1; //Client
+   int size_res = (int)((ceil(log10(res*-1)) + 1) * sizeof(char));
+   char res_string[size_res+1];
+   if(sizeof(res_string) < 0 )
+      printf("Error\n");
 
    int size_i = (int)((ceil(log10(i)) + 1) * sizeof(char));
    char i_string[size_i + 1];
    sprintf(i_string, "%d ", i);
-   printf("I: %s\n", i_string);
 
    int size_task = (int)((ceil(log10(task)) + 1) * sizeof(char));
    char task_string[size_task + 1];
    sprintf(task_string, "%d ", size_task);
-   printf("TASK: %s\n", task_string);
 
    int size_pid = (int)((ceil(log10(pid)) + 1) * sizeof(char));
    char pid_string[size_pid + 1];
    sprintf(pid_string, "%d ", pid);
-   printf("PID: %s\n", pid_string);
 
    unsigned long int size_tid = (unsigned long int)((ceil(log10(tid)) + 1) * sizeof(char));
    char tid_string[size_tid + 1];
-   printf("SIZE TID: %lu\n", sizeof(tid));
    sprintf(tid_string, "%lu ", tid);
-   printf("TID: %s\n", tid_string);
 
    strcat(i_string, task_string);
-   printf("CAT1: %s\n", i_string);
    strcat(i_string, pid_string);
-   printf("CAT2: %s\n", i_string);
-   
    strcat(i_string, tid_string);
-   printf("CAT3: %s\n", i_string); 
 
-   printf("RES: %s | %d\n", res_string, res);
-
-   int size_res2 = (int)((ceil(log10(res)) + 1) * sizeof(char));
-   char res_string2[size_res2];
-   sprintf(res_string2, "%d", res);
-   printf("RES2: %s\n", res_string2);
+   if(res > 0){
+      int size_res2 = (int)((ceil(log10(res)) + 1) * sizeof(char));
+      char res_string2[size_res2];
+      sprintf(res_string2, "%d", res);
+      strcat(i_string, res_string2);
+   } else{
+      int size_res2 = (int)((ceil(log10(res*-1)) + 1) * sizeof(char));
+      char res_string2[size_res2+1];
+      sprintf(res_string2, "%d", res);
+      strcat(i_string, res_string2);
+   }
    
-   printf("CAT3: %s\n", i_string);
-   strcat(i_string, res_string2);
    printf("Message: %s\n", i_string);
 
-   //write(fd_public, i_string, sizeof(i_string));
+   write(fd_public, i_string, sizeof(i_string));
 }
 
 void *timeCountdown(void *time)
