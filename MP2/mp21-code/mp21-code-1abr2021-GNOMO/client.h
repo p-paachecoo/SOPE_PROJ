@@ -1,6 +1,7 @@
 
 
 int fd_public;
+int identifier_c = 1;
 
 void* createRequests();
 
@@ -8,4 +9,6 @@ void* makeRequest();
 
 void* timeCountdown(void* time);
 
-void sendPublicMessage(int task);
+void createPublicMessage(int task);
+
+void sendPublicMessage(char msg[]); //Critical Zone

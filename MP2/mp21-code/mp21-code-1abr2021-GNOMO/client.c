@@ -13,7 +13,6 @@
 
 int main(int argc, char *argv[])
 {
-
    //Check Args
    if (argc != 4 || strcmp(argv[1], "-t") != 0)
    {
@@ -66,16 +65,15 @@ void *createRequests()
    pthread_t id;
 
    //Launch Cn request threads
-   //while (1)
-   //{
-   usleep((rand() % 50 + 30) * 1000); //sleep between 10 and 60ms
-   if ((err = pthread_create(&id, NULL, makeRequest, NULL)) != 0)
+   while (1)
    {
-      fprintf(stderr, "C0 thread: %s!\n", strerror(err));
-      exit(-1);
+      usleep((rand() % 50 + 30) * 1000); //sleep between 10 and 60ms
+      if ((err = pthread_create(&id, NULL, makeRequest, NULL)) != 0)
+      {
+         fprintf(stderr, "C0 thread: %s!\n", strerror(err));
+         exit(-1);
+      }
    }
-   sleep(10);
-   //}
 
    pthread_exit(NULL);
 }
@@ -102,7 +100,7 @@ void *makeRequest()
 
    //IWANT with private FIFO name
    printf("Sending private fifoname\n");
-   sendPublicMessage(1);
+   createPublicMessage(1);
    printf("Sent\n");
 
    //Create Private FIFO
@@ -123,11 +121,8 @@ void *makeRequest()
    pthread_exit(NULL);
 }
 
-void sendPublicMessage(int task)
+void createPublicMessage(int task)
 {
-   time_t t;
-   srand((unsigned)time(&t));
-   int i = rand() % 8 + 1; //1-9 inclusive
 
    int pid = getpid();
    unsigned long int tid = pthread_self();
@@ -137,9 +132,10 @@ void sendPublicMessage(int task)
    if(sizeof(res_string) < 0 )
       printf("Error\n");
 
-   int size_i = (int)((ceil(log10(i)) + 1) * sizeof(char));
+   int size_i = (int)((ceil(log10(identifier_c)) + 1) * sizeof(char));
    char i_string[size_i + 1];
-   sprintf(i_string, "%d ", i);
+   sprintf(i_string, "%d ", identifier_c);
+   identifier_c += 1;
 
    int size_task = (int)((ceil(log10(task)) + 1) * sizeof(char));
    char task_string[size_task + 1];
@@ -170,8 +166,13 @@ void sendPublicMessage(int task)
    }
    
    printf("Message: %s\n", i_string);
+   sendPublicMessage(i_string);
+   
+}
 
-   write(fd_public, i_string, sizeof(i_string));
+void sendPublicMessage(char* msg){
+   //TO DO deal with crit zone
+   //write(fd_public, msg, sizeof(msg));
 }
 
 void *timeCountdown(void *time)
