@@ -9,6 +9,4 @@ void* makeRequest();
 
 void* timeCountdown(void* time);
 
-void createPublicMessage(int task);
-
-void sendPublicMessage(char msg[]); //Critical Zone
+void createPublicMessage(int task, char* msg);

@@ -98,30 +98,37 @@ void *makeRequest()
    char filePath[] = "/tmp/";
    strcat(filePath, pidString);
 
+   //Create Message
+   char msg[1024];
+   createPublicMessage(1, msg);
+
    //IWANT with private FIFO name
-   printf("Sending private fifoname\n");
-   createPublicMessage(1);
+   printf("Sending private fifoname %s\n", msg);
+   write(fd_public, msg, sizeof(msg));
    printf("Sent\n");
+
+   signal(SIGPIPE, SIG_IGN);
 
    //Create Private FIFO
    int fd_private;
-   char msg[1024];
+   char msg_received[1024];
 
    if (mkfifo(filePath, 0666) < 0)
       perror("mkfifo");
    while ((fd_private = open(filePath, O_RDONLY)) < 0)
       ; // synchronization... will block until fifo opened for reading
    printf("reading\n");
-   if (read(fd_private, msg, 256) < 0)
+   if (read(fd_private, msg_received, 256) < 0)
       printf("Error Reading Request\n");
    else
-      printf("Message: %s\n", msg);
+      printf("Message: %s\n", msg_received);
    close(fd_private);
+   unlink(filePath);
 
    pthread_exit(NULL);
 }
 
-void createPublicMessage(int task)
+void createPublicMessage(int task, char* msg)
 {
 
    int pid = getpid();
@@ -166,14 +173,10 @@ void createPublicMessage(int task)
    }
    
    printf("Message: %s\n", i_string);
-   sendPublicMessage(i_string);
+   strcpy(msg, i_string);
    
 }
 
-void sendPublicMessage(char* msg){
-   //TO DO deal with crit zone
-   //write(fd_public, msg, sizeof(msg));
-}
 
 void *timeCountdown(void *time)
 {
