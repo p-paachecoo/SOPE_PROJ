@@ -87,13 +87,16 @@ void *makeRequest()
    
    int fd_client;
    fd_client = open(client_fifo, O_RDONLY | O_NONBLOCK);
-
+   
+   time_t t;
+   srand((unsigned)time(&t));
+   int task = rand() % 8 + 1; //1-9 inclusive
 
    struct message * msg = &(struct message) {
     .rid = identifier_c,
     .pid=getpid(),
     .tid=pthread_self(),
-    .tskload = 7,
+    .tskload = task,
     .tskres = -1
    };
    identifier_c += 1;
