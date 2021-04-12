@@ -29,8 +29,14 @@ int main(int argc, char *argv[])
    int timeInt = atoi(argv[2]);
    time_t start = time(0);
 
-   while (((fd_public = open(argv[3], O_WRONLY)) < 0) && (difftime(time(0), start) < timeInt))
-      ; // synchronization... will block until fifo opened for reading
+   server_path = argv[3];
+   do {
+      fd_server = open(argv[3], O_WRONLY);
+      if (fd_server == -1) {
+         printf("Connecting to server ...\n");
+         sleep(1);
+      }
+   } while(fd_server == -1 && difftime(time(0), start) < timeInt);
 
 
    //Launch Cn request threads
@@ -41,11 +47,11 @@ int main(int argc, char *argv[])
    {
       printf("Creating Requests\n");
       createRequests();
-      usleep((rand() % 50 + 30) * 1000); //sleep between 10 and 60ms
-   }
+      usleep((rand() % 50 + 30) * 1000); //sleep between 30 and 80ms
+   } 
 
    printf("END\n");
-   close(fd_public);
+   close(fd_server);
 
    return 0;
 }
@@ -61,7 +67,7 @@ void createRequests()
       fprintf(stderr, "C0 thread: %s!\n", strerror(err));
       exit(-1);
    }
-   pthread_detach(id);
+   //pthread_detach(id);
 
 }
 
@@ -70,100 +76,55 @@ void *makeRequest()
 {
    printf("Making Request\n");
 
-   int pid = getpid();
-   int sizePid = (int)((ceil(log10(pid)) + 1) * sizeof(char));
-   char pidString[sizePid + 1];
-   sprintf(pidString, "%d.", pid);
+   //Create Private FIFO
+   char client_fifo[256];
+   sprintf(client_fifo, "/tmp/%d.%ld", getpid(), pthread_self());
 
-   int tid = pthread_self();
-   int sizeTid = (int)((ceil(log10(tid)) + 1) * sizeof(char));
-   char tidString[sizeTid];
-   sprintf(tidString, "%d", tid);
+   printf("PATH %s\n", client_fifo);
 
-   strcat(pidString, tidString);
+   if (mkfifo(client_fifo, 0666) < 0)
+      perror("mkfifo");
+   
+   int fd_client;
+   fd_client = open(client_fifo, O_RDONLY | O_NONBLOCK);
 
-   char filePath[] = "/tmp/";
-   strcat(filePath, pidString);
 
-   //Create Message
-   char msg[1024];
-   createPublicMessage(msg);
+   struct message * msg = &(struct message) {
+    .rid = identifier_c,
+    .pid=getpid(),
+    .tid=pthread_self(),
+    .tskload = 7,
+    .tskres = -1
+   };
+   identifier_c += 1;
 
    //IWANT with private FIFO name
-   printf("Sending private fifoname %s\n", msg);
-   write(fd_public, msg, sizeof(msg));
-   printf("Sent\n");
+   printf("Sending private fifoname\n");
+   write(fd_server, msg, sizeof(*msg));
 
    signal(SIGPIPE, SIG_IGN);
 
-   //Create Private FIFO
-   int fd_private;
-   char msg_received[1024];
+   //RCVD
+   if (access(server_path, F_OK) != -1) {
+      printf("Reading\n");
 
-   if (mkfifo(filePath, 0666) < 0)
-      perror("mkfifo");
-   while ((fd_private = open(filePath, O_RDONLY)) < 0)
-      ; // synchronization... will block until fifo opened for reading
-   printf("reading\n");
-   if (read(fd_private, msg_received, 256) < 0)
-      printf("Error Reading Request\n");
-   else
-      printf("Message: %s\n", msg_received);
-   close(fd_private);
-   unlink(filePath);
+      struct message msg_received;
+        int counter = 0;
+        while (read(fd_client, &msg_received, sizeof(msg_received)) <= 0 && counter < 6) {
+            usleep(10000);
+            counter++;
+        }
+        if (counter < 6) //received msg or Server is closed
+            printf("Message: %d %d %ld %d %d\n", msg_received.rid, msg_received.pid, msg_received.tid, msg_received.tskload, msg_received.tskres);
+        else
+            printf("Error Reading Request\n");
+
+
+   } else
+      printf("Cannot access Server\n");
+
+   close(fd_client);
+   unlink(client_fifo);
 
    pthread_exit(NULL);
-}
-
-/* Fills msg with according values */
-void createPublicMessage(char* msg)
-{
-
-   int pid = getpid();
-   unsigned long int tid = pthread_self();
-   int res = -1; //Client
-   int size_res = (int)((ceil(log10(res*-1)) + 1) * sizeof(char));
-   char res_string[size_res+1];
-   if(sizeof(res_string) < 0 )
-      printf("Error\n");
-
-   int size_i = (int)((ceil(log10(identifier_c)) + 1) * sizeof(char));
-   char i_string[size_i + 1];
-   sprintf(i_string, "%d ", identifier_c);
-   identifier_c += 1;
-
-   srand(identifier_c*time(NULL));
-   int task = rand() % 8 + 1; //1-9 inclusive
-
-   int size_task = (int)((ceil(log10(task)) + 1) * sizeof(char));
-   char task_string[size_task + 1];
-   sprintf(task_string, "%d ", task);
-
-   int size_pid = (int)((ceil(log10(pid)) + 1) * sizeof(char));
-   char pid_string[size_pid + 1];
-   sprintf(pid_string, "%d ", pid);
-
-   unsigned long int size_tid = (unsigned long int)((ceil(log10(tid)) + 1) * sizeof(char));
-   char tid_string[size_tid + 1];
-   sprintf(tid_string, "%lu ", tid);
-
-   strcat(i_string, task_string);
-   strcat(i_string, pid_string);
-   strcat(i_string, tid_string);
-
-   if(res > 0){
-      int size_res2 = (int)((ceil(log10(res)) + 1) * sizeof(char));
-      char res_string2[size_res2];
-      sprintf(res_string2, "%d", res);
-      strcat(i_string, res_string2);
-   } else{
-      int size_res2 = (int)((ceil(log10(res*-1)) + 1) * sizeof(char));
-      char res_string2[size_res2+1];
-      sprintf(res_string2, "%d", res);
-      strcat(i_string, res_string2);
-   }
-   
-   printf("Message: %s\n", i_string);
-   strcpy(msg, i_string);
-   
 }
