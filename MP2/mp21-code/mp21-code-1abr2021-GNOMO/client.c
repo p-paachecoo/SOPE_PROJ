@@ -26,27 +26,23 @@ int main(int argc, char *argv[])
       exit(1);
    }
 
-   //Start program life time countdown
-   int err;
-   pthread_t idTime;
-   if ((err = pthread_create(&idTime, NULL, timeCountdown, argv[2])) != 0)
-   {
-      fprintf(stderr, "Main thread Countdown: %s!\n", strerror(err));
-      exit(-1);
-   }
+   int timeInt = atoi(argv[2]);
+   time_t start = time(0);
 
-   while ((fd_public = open(argv[3], O_WRONLY)) < 0)
+   while (((fd_public = open(argv[3], O_WRONLY)) < 0) && (difftime(time(0), start) < timeInt))
       ; // synchronization... will block until fifo opened for reading
 
-   pthread_t id;
-   if ((err = pthread_create(&id, NULL, createRequests, NULL)) != 0)
-   {
-      fprintf(stderr, "Main thread Create Request: %s!\n", strerror(err));
-      exit(-1);
-   }
 
-   if ((err = pthread_join(id, NULL)) != 0)
-      fprintf(stderr, "Main thread: %s!\n", strerror(err));
+   //Launch Cn request threads
+   time_t t;
+   srand((unsigned)time(&t));
+
+   while (difftime(time(0), start) < timeInt)
+   {
+      printf("Creating Requests\n");
+      createRequests();
+      usleep((rand() % 50 + 30) * 1000); //sleep between 10 and 60ms
+   }
 
    printf("END\n");
    close(fd_public);
@@ -55,27 +51,18 @@ int main(int argc, char *argv[])
 }
 
 //Create Requests Thread -> C0
-void *createRequests()
+void createRequests()
 {
-
-   printf("Creating Requests\n");
-   time_t t;
-   srand((unsigned)time(&t));
    int err;
    pthread_t id;
 
-   //Launch Cn request threads
-   while (1)
+   if ((err = pthread_create(&id, NULL, makeRequest, NULL)) != 0)
    {
-      usleep((rand() % 50 + 30) * 1000); //sleep between 10 and 60ms
-      if ((err = pthread_create(&id, NULL, makeRequest, NULL)) != 0)
-      {
-         fprintf(stderr, "C0 thread: %s!\n", strerror(err));
-         exit(-1);
-      }
+      fprintf(stderr, "C0 thread: %s!\n", strerror(err));
+      exit(-1);
    }
+   pthread_detach(id);
 
-   pthread_exit(NULL);
 }
 
 //Request Threads -> Cn
@@ -100,7 +87,7 @@ void *makeRequest()
 
    //Create Message
    char msg[1024];
-   createPublicMessage(1, msg);
+   createPublicMessage(msg);
 
    //IWANT with private FIFO name
    printf("Sending private fifoname %s\n", msg);
@@ -128,7 +115,8 @@ void *makeRequest()
    pthread_exit(NULL);
 }
 
-void createPublicMessage(int task, char* msg)
+/* Fills msg with according values */
+void createPublicMessage(char* msg)
 {
 
    int pid = getpid();
@@ -144,9 +132,12 @@ void createPublicMessage(int task, char* msg)
    sprintf(i_string, "%d ", identifier_c);
    identifier_c += 1;
 
+   srand(identifier_c*time(NULL));
+   int task = rand() % 8 + 1; //1-9 inclusive
+
    int size_task = (int)((ceil(log10(task)) + 1) * sizeof(char));
    char task_string[size_task + 1];
-   sprintf(task_string, "%d ", size_task);
+   sprintf(task_string, "%d ", task);
 
    int size_pid = (int)((ceil(log10(pid)) + 1) * sizeof(char));
    char pid_string[size_pid + 1];
@@ -175,15 +166,4 @@ void createPublicMessage(int task, char* msg)
    printf("Message: %s\n", i_string);
    strcpy(msg, i_string);
    
-}
-
-
-void *timeCountdown(void *time)
-{
-   char *timeStr = time;
-   int timeInt = atoi(timeStr);
-   sleep(timeInt);
-   printf("KILL\n");
-   exit(0);
-   pthread_exit(NULL);
 }
