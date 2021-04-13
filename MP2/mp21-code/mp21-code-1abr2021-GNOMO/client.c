@@ -36,6 +36,8 @@ int main(int argc, char *argv[])
    time_t t;
    srand((unsigned)time(&t));
 
+   pthread_mutex_lock(&lock);
+
    while (difftime(time(0), start) < timeInt)
    {
       printf("Creating Requests\n");
@@ -43,7 +45,7 @@ int main(int argc, char *argv[])
       usleep((rand() % 50 + 30) * 1000); //sleep between 30 and 80ms
    } 
    
-   pthread_mutex_destroy(&lock);
+   pthread_mutex_unlock(&lock);
    printf("END\n");
    close(fd_server);
 
@@ -56,7 +58,7 @@ void createRequests()
    int err;
    pthread_t id;
 
-   pthread_mutex_lock(&lock);
+   
 
    if ((err = pthread_create(&id, NULL, makeRequest, NULL)) != 0)
    {
@@ -64,7 +66,7 @@ void createRequests()
       exit(-1);
    }
 
-   pthread_mutex_unlock(&lock);
+   
    //pthread_detach(id);
 
 }
