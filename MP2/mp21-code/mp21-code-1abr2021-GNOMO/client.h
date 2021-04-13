@@ -15,3 +15,5 @@ struct message {
 void createRequests();
 
 void* makeRequest();
+
+void log_msg(int rid, pid_t pid, pthread_t tid, int tskload, int tskres, char *operation);

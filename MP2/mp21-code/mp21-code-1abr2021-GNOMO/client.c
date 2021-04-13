@@ -104,10 +104,11 @@ void *makeRequest()
    //IWANT with private FIFO name
    printf("Sending private fifoname\n");
    write(fd_server, msg, sizeof(*msg));
+   log_msg(msg->rid, msg->pid, msg->tid, msg->tskload, msg->tskres, "IWANT");
 
    signal(SIGPIPE, SIG_IGN);
 
-   //RCVD
+   //GOTRS
    if (access(server_path, F_OK) != -1) {
       printf("Reading\n");
 
@@ -118,7 +119,8 @@ void *makeRequest()
             counter++;
         }
         if (counter < 6) //received msg or Server is closed
-            printf("Message: %d %d %ld %d %d\n", msg_received.rid, msg_received.pid, msg_received.tid, msg_received.tskload, msg_received.tskres);
+            //printf("Message: %d %d %ld %d %d\n", msg_received.rid, msg_received.pid, msg_received.tid, msg_received.tskload, msg_received.tskres);
+            log_msg(msg_received.rid, msg_received.pid, msg_received.tid, msg_received.tskload, msg_received.tskres, "GOTRS");
         else
             printf("Error Reading Request\n");
 
@@ -130,4 +132,15 @@ void *makeRequest()
    unlink(client_fifo);
 
    pthread_exit(NULL);
+}
+
+
+void log_msg(int rid, pid_t pid, pthread_t tid, int tskload, int tskres, char *operation) {
+
+    char* msg;
+    msg = (char*) malloc (128 * sizeof(char));
+    time_t t = time(NULL);
+
+    sprintf(msg, "%ld ; %d ; %d ; %ld ; %d ; %d ; %s\n", t, rid, pid, tid, tskload, tskres, operation);
+    write(STDOUT_FILENO, msg, strlen(msg));
 }
