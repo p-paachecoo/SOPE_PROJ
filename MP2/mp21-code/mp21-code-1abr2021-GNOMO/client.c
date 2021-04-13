@@ -90,7 +90,7 @@ void *makeRequest()
    fd_client = open(client_fifo, O_RDONLY | O_NONBLOCK);
    
    time_t t;
-   srand((unsigned)time(&t));
+   srand((unsigned)(time(&t)+pthread_self()%100));
    int task = rand() % 8 + 1; //1-9 inclusive
 
    struct message * msg = &(struct message) {
@@ -114,16 +114,17 @@ void *makeRequest()
    if (access(server_path, F_OK) != -1) {
       printf("Reading\n");
 
-      struct message msg_received;
-        int counter = 0;
-        while (read(fd_client, &msg_received, sizeof(msg_received)) <= 0 && counter < 6) {
-            usleep(10000);
-            counter++;
-        }
-        if (counter < 6) //received msg or Server is closed
-            log_msg(msg_received.rid, msg_received.tskload, getpid(), pthread_self(), msg_received.tskres, "GOTRS");
-        else
-            printf("Error Reading Request\n");
+   struct message msg_received;
+      int counter = 0;
+      while (read(fd_client, &msg_received, sizeof(msg_received)) <= 0 && counter < 6) {
+         usleep(10000);
+         counter++;
+      }
+      if (counter < 6){ //received msg or Server is closed
+         log_msg(msg->rid, getpid(), pthread_self(), msg_received.tskload, msg_received.tskres, "GOTRS");
+      }
+      else
+         printf("Error Reading Request\n");
 
 
    } else
