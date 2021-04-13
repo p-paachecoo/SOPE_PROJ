@@ -15,8 +15,8 @@ int main(int argc, char *argv[])
       exit(1);
    }
 
-   int timeInt = atoi(argv[2]);
-   time_t start = time(0);
+   max_time = atoi(argv[2]);
+   initial_time = time(0);
 
    server_path = argv[3];
    do {
@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
          printf("Connecting to server ...\n");
          sleep(1);
       }
-   } while(fd_server == -1 && difftime(time(0), start) < timeInt);
+   } while(fd_server == -1 && difftime(time(0), initial_time) < max_time);
 
    if (pthread_mutex_init(&lock1, NULL) != 0){
       printf("\n mutex init failed\n");
@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
    time_t t;
    srand((unsigned)time(&t));
 
-   while (difftime(time(0), start) < timeInt)
+   while (difftime(time(0), initial_time) < max_time)
    {
       printf("Creating Requests\n");
       createRequests();
@@ -108,6 +108,13 @@ void *makeRequest()
    pthread_mutex_unlock(&lock1);
 
    //IWANT with private FIFO name
+   if(difftime(time(0), initial_time) >= max_time){
+      close(fd_client);
+      unlink(client_fifo);
+
+      pthread_exit(NULL);
+   }
+
    pthread_mutex_lock(&lock2);
 
    printf("Sending private fifoname\n");
@@ -120,24 +127,28 @@ void *makeRequest()
    signal(SIGPIPE, SIG_IGN);
 
    //GOTRS
-   if (access(server_path, F_OK) != -1) {
-      printf("Reading\n");
+
+   printf("Reading\n");
 
    struct message msg_received;
-      int counter = 0;
-      while (read(fd_client, &msg_received, sizeof(msg_received)) <= 0 && counter < 6) {
-         usleep(10000);
-         counter++;
+   int timeout = 0;
+   while (read(fd_client, &msg_received, sizeof(msg_received)) <= 0) {
+      if(difftime(time(0), initial_time) >= max_time){
+         timeout = 1;
+         break;
       }
-      if (counter < 6){ //received msg or Server is closed
-         log_msg(msg->rid, getpid(), pthread_self(), msg_received.tskload, msg_received.tskres, "GOTRS");
-      }
+      usleep(10000);
+   }
+   if (timeout == 0){ //received msg or Server is closed
+      if(msg_received.tskres == -1)
+         log_msg(msg->rid, getpid(), pthread_self(), msg_received.tskload, msg_received.tskres, "CLOSD");
       else
-         printf("Error Reading Request\n");
+         log_msg(msg->rid, getpid(), pthread_self(), msg_received.tskload, msg_received.tskres, "GOTRS");
+   }
+   else 
+      log_msg(msg->rid, getpid(), pthread_self(), msg->tskload, msg->tskres, "GAVUP");
 
 
-   } else
-      printf("Cannot access Server\n");
 
    close(fd_client);
    unlink(client_fifo);

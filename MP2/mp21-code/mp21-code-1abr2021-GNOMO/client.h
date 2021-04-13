@@ -14,6 +14,8 @@ int identifier_c = 1;
 char* server_path;
 pthread_mutex_t lock1;
 pthread_mutex_t lock2;
+time_t initial_time;
+int max_time;
 
 struct message {
 	int rid;	// request id
