@@ -12,7 +12,8 @@
 int fd_server;
 int identifier_c = 1;
 char* server_path;
-pthread_mutex_t lock;
+pthread_mutex_t lock1;
+pthread_mutex_t lock2;
 
 struct message {
 	int rid;	// request id

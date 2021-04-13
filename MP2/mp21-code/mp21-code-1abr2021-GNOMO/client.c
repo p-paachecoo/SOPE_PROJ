@@ -27,7 +27,12 @@ int main(int argc, char *argv[])
       }
    } while(fd_server == -1 && difftime(time(0), start) < timeInt);
 
-   if (pthread_mutex_init(&lock, NULL) != 0){
+   if (pthread_mutex_init(&lock1, NULL) != 0){
+      printf("\n mutex init failed\n");
+      return 1;
+   }
+
+   if (pthread_mutex_init(&lock2, NULL) != 0){
       printf("\n mutex init failed\n");
       return 1;
    }
@@ -36,8 +41,6 @@ int main(int argc, char *argv[])
    time_t t;
    srand((unsigned)time(&t));
 
-   pthread_mutex_lock(&lock);
-
    while (difftime(time(0), start) < timeInt)
    {
       printf("Creating Requests\n");
@@ -45,7 +48,7 @@ int main(int argc, char *argv[])
       usleep((rand() % 50 + 30) * 1000); //sleep between 30 and 80ms
    } 
    
-   pthread_mutex_unlock(&lock);
+   
    printf("END\n");
    close(fd_server);
 
@@ -66,7 +69,6 @@ void createRequests()
       exit(-1);
    }
 
-   
    //pthread_detach(id);
 
 }
@@ -101,11 +103,18 @@ void *makeRequest()
     .tskres = -1
    };
 
+   pthread_mutex_lock(&lock1);
    identifier_c += 1;
+   pthread_mutex_unlock(&lock1);
 
    //IWANT with private FIFO name
+   pthread_mutex_lock(&lock2);
+
    printf("Sending private fifoname\n");
    write(fd_server, msg, sizeof(*msg));
+
+   pthread_mutex_unlock(&lock2);
+
    log_msg(msg->rid, msg->pid, msg->tid, msg->tskload, msg->tskres, "IWANT");
 
    signal(SIGPIPE, SIG_IGN);
