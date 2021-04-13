@@ -121,7 +121,7 @@ void *makeRequest()
             counter++;
         }
         if (counter < 6) //received msg or Server is closed
-            log_msg(msg_received.rid, getpid(), pthread_self(), msg_received.tskload, msg_received.tskres, "GOTRS");
+            log_msg(msg_received.rid, msg_received.tskload, getpid(), pthread_self(), msg_received.tskres, "GOTRS");
         else
             printf("Error Reading Request\n");
 
@@ -138,10 +138,10 @@ void *makeRequest()
 
 void log_msg(int rid, pid_t pid, pthread_t tid, int tskload, int tskres, char *operation) {
 
-    char* msg;
-    msg = (char*) malloc (128 * sizeof(char));
-    time_t t = time(NULL);
-
-    sprintf(msg, "%ld ; %d ; %d ; %ld ; %d ; %d ; %s\n", t, rid, pid, tid, tskload, tskres, operation);
-    write(STDOUT_FILENO, msg, strlen(msg));
+   char* msg;
+   msg = (char*) malloc (128 * sizeof(char));
+   time_t inst = time(NULL);
+   //inst ; i ; t ; pid ; tid ; res ; oper
+   sprintf(msg, "%ld ; %d ; %d ; %d ; %ld ; %d ; %s\n", inst, rid, tskload, pid, tid, tskres, operation);
+   write(STDOUT_FILENO, msg, strlen(msg));
 }
