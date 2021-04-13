@@ -1,6 +1,18 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <pthread.h>
+#include <string.h>
+#include <math.h>
+#include <signal.h>
+
 int fd_server;
 int identifier_c = 1;
 char* server_path;
+pthread_mutex_t lock;
 
 struct message {
 	int rid;	// request id
