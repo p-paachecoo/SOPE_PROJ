@@ -48,12 +48,11 @@ int main(int argc, char *argv[])
 
    while (difftime(time(0), initial_time) < max_time)
    {
-      printf("Creating Requests\n");
       createRequests();
       usleep((rand_r(&seed) % 50 + 30) * 1000); //sleep between 30 and 80ms
    }
 
-   printf("END\n");
+
    close(fd_server);
 
    return 0;
@@ -71,19 +70,16 @@ void createRequests()
       exit(-1);
    }
 
-   //pthread_detach(id);
 }
 
 //Request Threads -> Cn
 void *makeRequest()
 {
-   printf("Making Request\n");
 
    //Create Private FIFO
    char client_fifo[256];
    snprintf(client_fifo, sizeof(client_fifo), "/tmp/%d.%ld", getpid(), pthread_self());
 
-   printf("PATH %s\n", client_fifo);
 
    if (mkfifo(client_fifo, 0666) < 0)
    {
@@ -110,7 +106,7 @@ void *makeRequest()
    identifier_c += 1;
    pthread_mutex_unlock(&lock1);
 
-   //IWANT with private FIFO name
+
    if (difftime(time(0), initial_time) >= max_time)
    {
       close(fd_client);
@@ -121,7 +117,6 @@ void *makeRequest()
 
    pthread_mutex_lock(&lock2);
 
-   printf("Sending private fifoname\n");
    write(fd_server, msg, sizeof(*msg));
 
    pthread_mutex_unlock(&lock2);
@@ -130,9 +125,7 @@ void *makeRequest()
 
    signal(SIGPIPE, SIG_IGN);
 
-   //GOTRS
 
-   printf("Reading\n");
 
    struct message msg_received;
    int timeout = 0;
@@ -146,7 +139,7 @@ void *makeRequest()
       usleep(10000);
    }
    if (timeout == 0)
-   { //received msg or Server is closed
+   { //received msg 
       if (msg_received.tskres == -1)
          log_msg(msg->rid, getpid(), pthread_self(), msg_received.tskload, msg_received.tskres, "CLOSD");
       else
@@ -163,10 +156,10 @@ void *makeRequest()
 
 void log_msg(int rid, pid_t pid, pthread_t tid, int tskload, int tskres, char *operation)
 {
-   char *msg = (char *)malloc(128 * sizeof(char));
+   char msg[128];
    time_t inst = time(NULL);
-   //inst ; i ; t ; pid ; tid ; res ; oper
-   snprintf(msg, 128 * sizeof(char), "%ld ; %d ; %d ; %d ; %ld ; %d ; %s\n", inst, rid, tskload, pid, tid, tskres, operation);
+
+   snprintf(msg, sizeof(msg), "%ld ; %d ; %d ; %d ; %ld ; %d ; %s\n", inst, rid, tskload, pid, tid, tskres, operation);
 
    if (msg != NULL)
       write(STDOUT_FILENO, msg, strlen(msg));
