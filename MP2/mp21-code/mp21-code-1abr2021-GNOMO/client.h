@@ -1,5 +1,3 @@
-
-
 int fd_server;
 int identifier_c = 1;
 char* server_path;
