@@ -43,13 +43,16 @@ int main(int argc, char *argv[])
    time_t t;
    srand((unsigned)time(&t));
 
+   pthread_mutex_lock(&lock);
+
    while (difftime(time(0), start) < timeInt)
    {
       printf("Creating Requests\n");
       createRequests();
       usleep((rand() % 50 + 30) * 1000); //sleep between 30 and 80ms
    } 
-
+   
+   pthread_mutex_unlock(&lock);
    printf("END\n");
    close(fd_server);
 
