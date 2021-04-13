@@ -48,8 +48,11 @@ int main(int argc, char *argv[])
 
    while (difftime(time(0), initial_time) < max_time)
    {
-      createRequests();
+      if(!server_closed)
+         createRequests();
+      
       usleep((rand_r(&seed) % 50 + 30) * 1000); //sleep between 30 and 80ms
+
    }
 
 
@@ -140,8 +143,10 @@ void *makeRequest()
    }
    if (timeout == 0)
    { //received msg 
-      if (msg_received.tskres == -1)
+      if (msg_received.tskres == -1){
          log_msg(msg->rid, getpid(), pthread_self(), msg_received.tskload, msg_received.tskres, "CLOSD");
+         server_closed = 1;
+      }
       else
          log_msg(msg->rid, getpid(), pthread_self(), msg_received.tskload, msg_received.tskres, "GOTRS");
    }

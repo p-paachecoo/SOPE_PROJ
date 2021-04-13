@@ -19,6 +19,7 @@ pthread_mutex_t lock1;
 pthread_mutex_t lock2;
 time_t initial_time;
 int max_time;
+int server_closed = 0;
 
 struct message
 {
