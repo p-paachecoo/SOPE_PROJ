@@ -82,8 +82,9 @@ void *makeRequest()
 
    printf("PATH %s\n", client_fifo);
 
-   if (mkfifo(client_fifo, 0666) < 0)
+   if (mkfifo(client_fifo, 0666) < 0) {
       perror("mkfifo");
+   }
    
    int fd_client;
    fd_client = open(client_fifo, O_RDONLY | O_NONBLOCK);
@@ -99,6 +100,7 @@ void *makeRequest()
     .tskload = task,
     .tskres = -1
    };
+
    identifier_c += 1;
 
    //IWANT with private FIFO name
@@ -112,19 +114,24 @@ void *makeRequest()
       printf("Reading\n");
 
       struct message msg_received;
-        int counter = 0;
-        while (read(fd_client, &msg_received, sizeof(msg_received)) <= 0 && counter < 6) {
-            usleep(10000);
-            counter++;
-        }
-        if (counter < 6) //received msg or Server is closed
-            printf("Message: %d %d %ld %d %d\n", msg_received.rid, msg_received.pid, msg_received.tid, msg_received.tskload, msg_received.tskres);
-        else
-            printf("Error Reading Request\n");
+      int counter = 0;
+
+      while (read(fd_client, &msg_received, sizeof(msg_received)) <= 0 && counter < 6) {
+         usleep(10000);
+         counter++;
+      }
+      if (counter < 6) { //received msg or Server is closed 
+         printf("Message: %d %d %ld %d %d\n", msg_received.rid, msg_received.pid, msg_received.tid, msg_received.tskload, msg_received.tskres);
+      }
+      else{
+         printf("Error Reading Request\n");
+      }
 
 
-   } else
+   } 
+   else{
       printf("Cannot access Server\n");
+   }
 
    close(fd_client);
    unlink(client_fifo);
