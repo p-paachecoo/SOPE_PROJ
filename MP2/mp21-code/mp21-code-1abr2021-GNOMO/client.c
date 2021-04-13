@@ -1,14 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <pthread.h>
-#include <string.h>
-#include <math.h>
-#include <signal.h>
-
 #include "client.h"
 
 int main(int argc, char *argv[])
@@ -38,6 +27,10 @@ int main(int argc, char *argv[])
       }
    } while(fd_server == -1 && difftime(time(0), start) < timeInt);
 
+   if (pthread_mutex_init(&lock, NULL) != 0){
+      printf("\n mutex init failed\n");
+      return 1;
+   }
 
    //Launch Cn request threads
    time_t t;
@@ -49,7 +42,8 @@ int main(int argc, char *argv[])
       createRequests();
       usleep((rand() % 50 + 30) * 1000); //sleep between 30 and 80ms
    } 
-
+   
+   pthread_mutex_destroy(&lock);
    printf("END\n");
    close(fd_server);
 
@@ -62,11 +56,15 @@ void createRequests()
    int err;
    pthread_t id;
 
+   pthread_mutex_lock(&lock);
+
    if ((err = pthread_create(&id, NULL, makeRequest, NULL)) != 0)
    {
       fprintf(stderr, "C0 thread: %s!\n", strerror(err));
       exit(-1);
    }
+
+   pthread_mutex_unlock(&lock);
    //pthread_detach(id);
 
 }
