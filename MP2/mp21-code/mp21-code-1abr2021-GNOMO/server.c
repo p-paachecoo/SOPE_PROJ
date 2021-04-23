@@ -59,9 +59,11 @@ int main(int argc, char *argv[])
 
    while (difftime(time(0), initial_time) < max_time)
    {
-      char buf_msg[sizeof(message)];
+      struct message* msg_received[sizeof(message)];
 
-      ssize_t num_bytes_read = read(fd_client_public, buf_msg, sizeof(message));
+      ssize_t num_bytes_read = read(fd_client_public, msg_received, sizeof(message));
+
+
 
       //TO DO process message
       
