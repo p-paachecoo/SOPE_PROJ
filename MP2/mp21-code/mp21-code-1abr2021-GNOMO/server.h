@@ -12,13 +12,15 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-int client_fifo_public;
 int fd_client_public;
 int buff_size;
+int identifier_c = 1;
 
 time_t initial_time;
 int max_time;
 pthread_mutex_t lock1;
+int client_closed = 0;
+char *client_fifo_public;
 
 struct message
 {
@@ -29,5 +31,12 @@ struct message
     int tskres;    // task result
 } message;
 
+struct message buffer[256];
+
+void getRequests();
+
+void *handleRequest();
+
+void log_msg(int rid, pid_t pid, pthread_t tid, int tskload, int tskres, char *operation);
 
 #endif // SERVER_H

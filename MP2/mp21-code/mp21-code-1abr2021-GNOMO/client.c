@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
    server_path = argv[3];
    do
    {
-      fd_server = open(argv[3], O_WRONLY);
+      fd_server = open(server_path, O_WRONLY);
       if (fd_server == -1)
       {
          printf("Connecting to server ...\n");
@@ -48,13 +48,11 @@ int main(int argc, char *argv[])
 
    while (difftime(time(0), initial_time) < max_time)
    {
-      if(!server_closed)
+      if (!server_closed)
          createRequests();
-      
+
       usleep((rand_r(&seed) % 50 + 30) * 1000); //sleep between 30 and 80ms
-
    }
-
 
    close(fd_server);
 
@@ -72,7 +70,6 @@ void createRequests()
       fprintf(stderr, "C0 thread: %s!\n", strerror(err));
       exit(-1);
    }
-
 }
 
 //Request Threads -> Cn
@@ -82,7 +79,6 @@ void *makeRequest()
    //Create Private FIFO
    char client_fifo[256];
    snprintf(client_fifo, sizeof(client_fifo), "/tmp/%d.%ld", getpid(), pthread_self());
-
 
    if (mkfifo(client_fifo, 0666) < 0)
    {
@@ -109,7 +105,6 @@ void *makeRequest()
    identifier_c += 1;
    pthread_mutex_unlock(&lock1);
 
-
    if (difftime(time(0), initial_time) >= max_time)
    {
       close(fd_client);
@@ -128,8 +123,6 @@ void *makeRequest()
 
    signal(SIGPIPE, SIG_IGN);
 
-
-
    struct message msg_received;
    int timeout = 0;
    while (read(fd_client, &msg_received, sizeof(msg_received)) <= 0)
@@ -142,8 +135,9 @@ void *makeRequest()
       usleep(10000);
    }
    if (timeout == 0)
-   { //received msg 
-      if (msg_received.tskres == -1){
+   { //received msg
+      if (msg_received.tskres == -1)
+      {
          log_msg(msg->rid, getpid(), pthread_self(), msg_received.tskload, msg_received.tskres, "CLOSD");
          server_closed = 1;
       }
