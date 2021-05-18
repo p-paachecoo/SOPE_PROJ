@@ -130,7 +130,7 @@ void *handleRequest()
    {
       close(fd_server_private);
       pthread_exit(NULL);
-      log_msg(msg->rid, msg->pid, msg->tid, msg->tskload, msg->tskres, "TSKEX"); // ns se aqui é TSKEX ou 2LATE
+      log_msg(msg->rid, msg->pid, msg->tid, msg->tskload, msg->tskres, "2LATE"); // check if it really is 2LATE
    }
 
    pthread_mutex_lock(&lock1);
