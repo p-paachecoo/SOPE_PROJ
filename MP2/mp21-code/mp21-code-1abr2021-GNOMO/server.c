@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
    {
       if (!client_closed)
          getRequests();
-         log_msg(request.id, getpid(), pthread_self(), task, -1, "RECVD");
+         log_msg(request.id, getpid(), pthread_self(), task, -1, "FAILD");
 
       usleep((rand_r(&seed) % 50 + 30) * 1000); //sleep between 30 and 80ms
    }
