@@ -47,21 +47,26 @@ int main(int argc, char *argv[])
       }
    } while (fd_client_public == -1 && difftime(time(0), initial_time) < max_time);
 
-   if (pthread_mutex_init(&lock1, NULL) != 0)
+   if (pthread_mutex_lock(&lock1) != 0)
    {
       printf("\n mutex init lock1 failed\n");
       return 1;
    }
+   else{
+      identifier_c += 1;
+      pthread_mutex_unlock(&lock1);
+   }
 
    //Launch Cn producer threads
-   time_t t;
-   unsigned int seed = (unsigned)time(&t);
+   unsigned int seed = (unsigned)(time(&t) + pthread_self() % 100);
    srand(seed);
+   int task = rand_r(&seed) % 8 + 1; //1-9 inclusive
 
    while (difftime(time(0), initial_time) < max_time)
    {
       if (!client_closed)
          getRequests();
+         log_msg(request.id, getpid(), pthread_self(), task, -1, "RECVD");
 
       usleep((rand_r(&seed) % 50 + 30) * 1000); //sleep between 30 and 80ms
    }
@@ -77,12 +82,18 @@ void getRequests()
 {
    int err;
    pthread_t id;
+   message request;
+
+
 
    if ((err = pthread_create(&id, NULL, handleRequest, NULL)) != 0)
    {
       fprintf(stderr, "S0 thread: %s!\n", strerror(err));
+      log_msg(request.id, getpid(), pthread_self(), task, -1, "RECVD");
       exit(-1);
    }
+
+   log_msg(request.id, getpid(), pthread_self(), request.dur, request.pl, "RECVD");
 }
 
 //Producer Threads -> Sn
