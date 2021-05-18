@@ -71,8 +71,12 @@ int main(int argc, char *argv[])
    {
       struct message msg_received;
 
-      if (read(fd_client_public, &msg_received, sizeof(message)) > 0 && !client_closed)
+      if (read(fd_client_public, &msg_received, sizeof(message)) > 0 && !client_closed){
          createProducer(msg_received);
+      }
+      else if (client_closed){
+         log_msg(msg->rid, getpid(), pthread_self(), msg->tskload, msg->tskres, "FAILD");
+      }
    }
 
    close(fd_client_public);
