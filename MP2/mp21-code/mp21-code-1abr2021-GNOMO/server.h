@@ -33,9 +33,13 @@ struct message
 
 struct message buffer[256];
 
-void getRequests();
+void createProducer(struct message msg);
 
-void *handleRequest();
+void createConsumer();
+
+void *handleRequest(void *arg);
+
+void *sendResponse();
 
 void log_msg(int rid, pid_t pid, pthread_t tid, int tskload, int tskres, char *operation);
 

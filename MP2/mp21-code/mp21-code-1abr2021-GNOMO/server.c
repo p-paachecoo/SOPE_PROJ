@@ -1,5 +1,6 @@
 #include "server.h"
 
+//Main Thread -> S0
 int main(int argc, char *argv[])
 {
    //Check Args
@@ -52,23 +53,26 @@ int main(int argc, char *argv[])
       printf("\n mutex init lock1 failed\n");
       return 1;
    }
-   else{
+   else
+   {
       identifier_c += 1;
       pthread_mutex_unlock(&lock1);
    }
 
-   //Launch Cn producer threads
+   // Create consumer thread
+   createConsumer();
+
+   // Launch Cn producer threads
+   time_t t;
    unsigned int seed = (unsigned)(time(&t) + pthread_self() % 100);
    srand(seed);
-   int task = rand_r(&seed) % 8 + 1; //1-9 inclusive
 
    while (difftime(time(0), initial_time) < max_time)
    {
-      if (!client_closed)
-         getRequests();
-         log_msg(request.id, getpid(), pthread_self(), task, -1, "FAILD");
+      struct message msg_received;
 
-      usleep((rand_r(&seed) % 50 + 30) * 1000); //sleep between 30 and 80ms
+      if (read(fd_client_public, &msg_received, sizeof(message)) > 0 && !client_closed)
+         createProducer(msg_received);
    }
 
    close(fd_client_public);
@@ -77,41 +81,36 @@ int main(int argc, char *argv[])
    return 0;
 }
 
-//Main Thread -> S0
-void getRequests()
+void createProducer(struct message msg)
 {
    int err;
    pthread_t id;
-   message request;
 
-
-
-   if ((err = pthread_create(&id, NULL, handleRequest, NULL)) != 0)
+   if ((err = pthread_create(&id, NULL, handleRequest, (void *)&msg)) != 0)
    {
       fprintf(stderr, "S0 thread: %s!\n", strerror(err));
-      log_msg(request.id, getpid(), pthread_self(), task, -1, "RECVD");
       exit(-1);
    }
+}
 
-   log_msg(request.id, getpid(), pthread_self(), request.dur, request.pl, "RECVD");
+void createConsumer()
+{
+   int err;
+   pthread_t id;
+
+   if ((err = pthread_create(&id, NULL, sendResponse, NULL)) != 0)
+   {
+      fprintf(stderr, "S0 thread: %s!\n", strerror(err));
+      exit(-1);
+   }
 }
 
 //Producer Threads -> Sn
-void *handleRequest()
+void *handleRequest(void *arg)
 {
-   struct message msg_received;
+   struct message *msg = arg;
 
-   /*ssize_t num_bytes_read = */ read(fd_client_public, &msg_received, sizeof(message));
-
-   buffer[sizeof(buffer)] = msg_received;
-
-   log_msg(msg_received.rid, getpid(), pthread_self(), msg_received.tskload, msg_received.tskres, "RECVD");
-
-   char server_fifo[256];
-   snprintf(server_fifo, sizeof(server_fifo), "/tmp/%d.%ld", msg_received.pid, msg_received.tid);
-
-   int fd_server_private;
-   fd_server_private = open(server_fifo, O_RDONLY | O_NONBLOCK);
+   log_msg(msg->rid, getpid(), pthread_self(), msg->tskload, msg->tskres, "RECVD");
 
    time_t t;
 
@@ -119,29 +118,53 @@ void *handleRequest()
    srand(seed);
    int task = rand_r(&seed) % 8 + 1; //1-9 inclusive
 
-   struct message *msg = &(struct message){
-       .rid = msg_received.rid,
+   struct message *response = &(struct message){
+       .rid = msg->rid,
        .pid = getpid(),
        .tid = pthread_self(),
        .tskload = task,
        .tskres = -1};
 
-   if (difftime(time(0), initial_time) >= max_time)
+   buffer[sizeof(buffer)] = *response;
+
+   pthread_exit(NULL);
+}
+
+//Consumer Thread -> Sc
+void *sendResponse()
+{
+   while (difftime(time(0), initial_time) < max_time)
    {
-      close(fd_server_private);
-      pthread_exit(NULL);
-      log_msg(msg->rid, msg->pid, msg->tid, msg->tskload, msg->tskres, "2LATE"); // check if it really is 2LATE
+      if (sizeof(buffer) > 0)
+      {
+         struct message response = buffer[0];
+
+         //TODO: remove message from buffer
+
+         char server_fifo[256];
+         snprintf(server_fifo, sizeof(server_fifo), "/tmp/%d.%ld", response.pid, response.tid);
+
+         int fd_server_private;
+         fd_server_private = open(server_fifo, O_RDONLY | O_NONBLOCK);
+
+         if (difftime(time(0), initial_time) >= max_time)
+         {
+            log_msg(response.rid, response.pid, response.tid, response.tskload, response.tskres, "2LATE");
+            close(fd_server_private);
+            pthread_exit(NULL);
+         }
+
+         pthread_mutex_lock(&lock1);
+
+         write(fd_server_private, &response, sizeof(response));
+
+         pthread_mutex_unlock(&lock1);
+
+         log_msg(response.rid, response.pid, response.tid, response.tskload, response.tskres, "TSKDN");
+
+         close(fd_server_private);
+      }
    }
-
-   pthread_mutex_lock(&lock1);
-
-   write(fd_server_private, msg, sizeof(*msg));
-
-   pthread_mutex_unlock(&lock1);
-
-   log_msg(msg->rid, msg->pid, msg->tid, msg->tskload, msg->tskres, "TSKDN");
-
-   close(fd_server_private);
 
    pthread_exit(NULL);
 }
