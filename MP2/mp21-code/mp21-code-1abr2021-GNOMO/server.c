@@ -113,6 +113,8 @@ void *handleRequest(void *arg)
 {
    struct message *msg = arg;
 
+   //printf("%d\n", msg->rid);
+
    time_t t;
 
    unsigned int seed = (unsigned)(time(&t) + pthread_self() % 100);
@@ -121,13 +123,22 @@ void *handleRequest(void *arg)
 
    struct message *response = &(struct message){
        .rid = msg->rid,
-       .pid = getpid(),
-       .tid = pthread_self(),
+       .pid = msg->pid,
+       .tid = msg->tid,
        .tskload = task,
        .tskres = -1};
 
+   pthread_mutex_lock(&lock1);
+
+   while (buff_num_elems >= buff_size)
+      pthread_cond_wait(&buff_full, &lock1);
+
    buffer[buff_num_elems] = *response;
    buff_num_elems++;
+
+   pthread_cond_signal(&buff_empty);
+
+   pthread_mutex_unlock(&lock1);
 
    log_msg(response->rid, getpid(), pthread_self(), response->tskload, response->tskres, "TSKEX");
 
@@ -137,42 +148,59 @@ void *handleRequest(void *arg)
 //Consumer Thread -> Sc
 void *sendResponse()
 {
-   while (difftime(time(0), initial_time) < max_time)
+   while (1)
    {
-      if (buff_num_elems > 0)
+      pthread_mutex_lock(&lock1);
+
+      while (buff_num_elems <= 0)
+         pthread_cond_wait(&buff_empty, &lock1);
+
+      struct message response = buffer[0];
+
+      for (int i = 0; i < buff_num_elems - 1; i++)
       {
-         struct message response = buffer[0];
+         buffer[i] = buffer[i + 1];
+      }
+      buff_num_elems--;
 
-         for (int i = 0; i < buff_num_elems - 1; i++)
-         {
-            buffer[i] = buffer[i + 1];
-         }
-         buff_num_elems--;
+      pthread_cond_signal(&buff_full);
 
-         char server_fifo[256];
-         snprintf(server_fifo, sizeof(server_fifo), "/tmp/%d.%ld", response.pid, response.tid);
+      pthread_mutex_unlock(&lock1);
 
-         int fd_server_private;
-         fd_server_private = open(server_fifo, O_RDONLY | O_NONBLOCK);
+      char server_fifo[256];
+      snprintf(server_fifo, sizeof(server_fifo), "/tmp/%d.%ld", response.pid, response.tid);
 
-         if (fd_server_private == -1)
-         {
-            log_msg(response.rid, response.pid, response.tid, response.tskload, response.tskres, "FAILD");
-            close(fd_server_private);
-            pthread_exit(NULL);
-         }
+      //printf("%s\n", server_fifo);
 
-         if (difftime(time(0), initial_time) >= max_time)
-         {
-            log_msg(response.rid, response.pid, response.tid, response.tskload, response.tskres, "2LATE");
-            close(fd_server_private);
-            pthread_exit(NULL);
-         }
+      int fd_server_private;
+      fd_server_private = open(server_fifo, O_RDONLY | O_NONBLOCK);
+
+      if (fd_server_private == -1)
+      {
+         log_msg(response.rid, response.pid, response.tid, response.tskload, response.tskres, "FAILD");
+         close(fd_server_private);
+         pthread_exit(NULL);
+      }
+
+      if (difftime(time(0), initial_time) >= max_time)
+      {
+         response.tskres = -1;
 
          pthread_mutex_lock(&lock1);
-
          write(fd_server_private, &response, sizeof(response));
+         pthread_mutex_unlock(&lock1);
 
+         log_msg(response.rid, response.pid, response.tid, response.tskload, response.tskres, "2LATE");
+
+         signal(SIGPIPE, SIG_IGN);
+
+         close(fd_server_private);
+         pthread_exit(NULL);
+      }
+      else
+      {
+         pthread_mutex_lock(&lock1);
+         write(fd_server_private, &response, sizeof(response));
          pthread_mutex_unlock(&lock1);
 
          log_msg(response.rid, response.pid, response.tid, response.tskload, response.tskres, "TSKDN");

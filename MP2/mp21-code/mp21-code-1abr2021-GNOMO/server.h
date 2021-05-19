@@ -19,6 +19,9 @@ int identifier_c = 1;
 time_t initial_time;
 int max_time;
 pthread_mutex_t lock1;
+pthread_cond_t buff_full;
+pthread_cond_t buff_empty;
+
 char *client_fifo_public;
 
 struct message
