@@ -31,7 +31,8 @@ struct message
     int tskres;    // task result
 } message;
 
-struct message buffer[256];
+struct message *buffer;
+int buff_num_elems = 0;
 
 void createProducer(struct message msg);
 

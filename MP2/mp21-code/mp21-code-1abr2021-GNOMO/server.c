@@ -4,7 +4,7 @@
 int main(int argc, char *argv[])
 {
    //Check Args
-   if ((argc != 5 && argc != 4) || strcmp(argv[1], "-t") != 0)
+   if ((argc != 6 && argc != 4) || strcmp(argv[1], "-t") != 0)
    {
       printf("Usage: c <-t nsecs> [-l buffsz] fifoname\n");
       exit(1);
@@ -23,16 +23,20 @@ int main(int argc, char *argv[])
          printf("[-l buffsz] must be greater than 0\n");
          exit(1);
       }
+      client_fifo_public = argv[5];
    }
    else
+   {
       buff_size = 1;
+      client_fifo_public = argv[3];
+   }
+
+   buffer = malloc(buff_size * sizeof(message));
 
    max_time = atoi(argv[2]);
    initial_time = time(0);
 
    //Create public FIFO
-   client_fifo_public = argv[3];
-
    if (mkfifo(client_fifo_public, 0666) < 0)
    {
       perror("mkfifo");
@@ -71,10 +75,12 @@ int main(int argc, char *argv[])
    {
       struct message msg_received;
 
-      if (read(fd_client_public, &msg_received, sizeof(message)) > 0 && !client_closed){
+      if (read(fd_client_public, &msg_received, sizeof(message)) > 0 && !client_closed)
+      {
          createProducer(msg_received);
       }
-      else if (client_closed){
+      else if (client_closed)
+      {
          log_msg(msg_received.rid, getpid(), pthread_self(), msg_received.tskload, msg_received.tskres, "FAILD");
       }
    }
@@ -129,7 +135,8 @@ void *handleRequest(void *arg)
        .tskload = task,
        .tskres = -1};
 
-   buffer[sizeof(buffer)] = *response;
+   buffer[buff_num_elems] = *response;
+   buff_num_elems++;
 
    pthread_exit(NULL);
 }
@@ -139,11 +146,15 @@ void *sendResponse()
 {
    while (difftime(time(0), initial_time) < max_time)
    {
-      if (sizeof(buffer) > 0)
+      if (buff_num_elems > 0)
       {
          struct message response = buffer[0];
 
-         //TODO: remove message from buffer
+         for (int i = 0; i < buff_num_elems - 1; i++)
+         {
+            buffer[i] = buffer[i + 1];
+         }
+         buff_num_elems--;
 
          char server_fifo[256];
          snprintf(server_fifo, sizeof(server_fifo), "/tmp/%d.%ld", response.pid, response.tid);
