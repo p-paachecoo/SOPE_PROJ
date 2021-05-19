@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
          createProducer(msg_received);
       }
       else if (client_closed){
-         log_msg(msg->rid, getpid(), pthread_self(), msg->tskload, msg->tskres, "FAILD");
+         log_msg(msg_received.rid, getpid(), pthread_self(), msg_received.tskload, msg_received.tskres, "FAILD");
       }
    }
 
