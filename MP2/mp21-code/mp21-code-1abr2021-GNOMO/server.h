@@ -19,7 +19,6 @@ int identifier_c = 1;
 time_t initial_time;
 int max_time;
 pthread_mutex_t lock1;
-int client_closed = 0;
 char *client_fifo_public;
 
 struct message

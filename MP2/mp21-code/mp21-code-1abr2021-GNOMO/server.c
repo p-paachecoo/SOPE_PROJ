@@ -67,21 +67,14 @@ int main(int argc, char *argv[])
    createConsumer();
 
    // Launch Cn producer threads
-   time_t t;
-   unsigned int seed = (unsigned)(time(&t) + pthread_self() % 100);
-   srand(seed);
-
    while (difftime(time(0), initial_time) < max_time)
    {
       struct message msg_received;
 
-      if (read(fd_client_public, &msg_received, sizeof(message)) > 0 && !client_closed)
+      if (read(fd_client_public, &msg_received, sizeof(message)) > 0)
       {
+         log_msg(msg_received.rid, getpid(), pthread_self(), msg_received.tskload, msg_received.tskres, "RECVD");
          createProducer(msg_received);
-      }
-      else if (client_closed)
-      {
-         log_msg(msg_received.rid, getpid(), pthread_self(), msg_received.tskload, msg_received.tskres, "FAILD");
       }
    }
 
@@ -120,8 +113,6 @@ void *handleRequest(void *arg)
 {
    struct message *msg = arg;
 
-   log_msg(msg->rid, getpid(), pthread_self(), msg->tskload, msg->tskres, "RECVD");
-
    time_t t;
 
    unsigned int seed = (unsigned)(time(&t) + pthread_self() % 100);
@@ -137,6 +128,8 @@ void *handleRequest(void *arg)
 
    buffer[buff_num_elems] = *response;
    buff_num_elems++;
+
+   log_msg(response->rid, getpid(), pthread_self(), response->tskload, response->tskres, "TSKEX");
 
    pthread_exit(NULL);
 }
@@ -162,6 +155,13 @@ void *sendResponse()
          int fd_server_private;
          fd_server_private = open(server_fifo, O_RDONLY | O_NONBLOCK);
 
+         if (fd_server_private == -1)
+         {
+            log_msg(response.rid, response.pid, response.tid, response.tskload, response.tskres, "FAILD");
+            close(fd_server_private);
+            pthread_exit(NULL);
+         }
+
          if (difftime(time(0), initial_time) >= max_time)
          {
             log_msg(response.rid, response.pid, response.tid, response.tskload, response.tskres, "2LATE");
@@ -176,6 +176,8 @@ void *sendResponse()
          pthread_mutex_unlock(&lock1);
 
          log_msg(response.rid, response.pid, response.tid, response.tskload, response.tskres, "TSKDN");
+
+         signal(SIGPIPE, SIG_IGN);
 
          close(fd_server_private);
       }
