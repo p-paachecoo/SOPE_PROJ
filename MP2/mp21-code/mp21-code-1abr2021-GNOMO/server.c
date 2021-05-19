@@ -111,7 +111,7 @@ void createConsumer()
 //Producer Threads -> Sn
 void *handleRequest(void *arg)
 {
-   struct message *msg = arg;
+   struct message *msg = (struct message *)arg;
 
    //printf("%d\n", msg->rid);
 
@@ -126,7 +126,7 @@ void *handleRequest(void *arg)
        .pid = msg->pid,
        .tid = msg->tid,
        .tskload = task,
-       .tskres = -1};
+       .tskres = 1};
 
    pthread_mutex_lock(&lock1);
 
