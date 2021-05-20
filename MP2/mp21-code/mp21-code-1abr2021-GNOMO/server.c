@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
    createConsumer();
 
    // Launch Cn producer threads
-   while (!closed)
+   while (difftime(time(0), initial_time) < 2*max_time) //TODO
    {
       struct message *msg_received = malloc(sizeof(message));
 
@@ -175,7 +175,7 @@ void *sendResponse()
       int client_pid = buffer[0].client.pid;
       int64_t client_tid = buffer[0].client.tid;
 
-      log_msg(response.rid, response.pid, response.tid, response.tskload, response.tskres, "CHEGOU");
+      //log_msg(response.rid, response.pid, response.tid, response.tskload, response.tskres, "CHEGOU");
 
       for (int i = 0; i < buff_num_elems - 1; i++)
       {
@@ -196,23 +196,21 @@ void *sendResponse()
       if (fd_server_private == -1)
       {
          log_msg(response.rid, response.pid, response.tid, response.tskload, response.tskres, "FAILD");
-         closed = 1;
-         close(fd_server_private);
-         pthread_exit(NULL);
-      }
+      } else {
+         fprintf(stderr,"[server] opened client fifo %s",server_fifo);
+         pthread_mutex_lock(&lock1);
+         write(fd_server_private, &response, sizeof(response));
+         pthread_mutex_unlock(&lock1);
 
-      pthread_mutex_lock(&lock1);
-      write(fd_server_private, &response, sizeof(response));
-      pthread_mutex_unlock(&lock1);
-
-      if (response.tskres == -1)
-      {
-         log_msg(response.rid, response.pid, response.tid, response.tskload, response.tskres, "2LATE");
-         printf("ELEMS: %d", buff_num_elems);
-      }
-      else
-      {
-         log_msg(response.rid, response.pid, response.tid, response.tskload, response.tskres, "TSKDN");
+         if (response.tskres == -1)
+         {
+            log_msg(response.rid, response.pid, response.tid, response.tskload, response.tskres, "2LATE");
+            printf("ELEMS: %d", buff_num_elems);
+         }
+         else
+         {
+            log_msg(response.rid, response.pid, response.tid, response.tskload, response.tskres, "TSKDN");
+         }
       }
 
       signal(SIGPIPE, SIG_IGN);
