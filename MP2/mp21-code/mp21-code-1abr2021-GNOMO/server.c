@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
    createConsumer();
 
    // Launch Cn producer threads
-   while (difftime(time(0), initial_time) < 2*max_time) //TODO
+   while (difftime(time(0), initial_time) < max_time || flag_two_late == 0)
    {
       struct message *msg_received = malloc(sizeof(message));
 
@@ -164,13 +164,25 @@ void *handleRequest(void *arg)
 //Consumer Thread -> Sc
 void *sendResponse()
 {
-   while (difftime(time(0), initial_time) < 2*max_time)
+   int stop = 0;
+   time_t start = clock();
+   pthread_mutex_lock(&lock3);
+   while (buff_num_elems <= 0){
+      if(clock()-start < 0.3/CLOCKS_PER_SEC){
+         stop = 1;
+         break;
+      }
+      pthread_cond_wait(&buff_empty, &lock3);
+
+   }
+   pthread_mutex_unlock(&lock3);
+
+   while (difftime(time(0), initial_time) < max_time || stop == 0) //TODO
    {
-      pthread_mutex_lock(&lock3);
-
-      while (buff_num_elems <= 0)
-         pthread_cond_wait(&buff_empty, &lock3);
-
+      stop = 0;
+      
+      
+      pthread_mutex_lock(&lock4);
       struct message response = buffer[0].server;
       int client_pid = buffer[0].client.pid;
       int64_t client_tid = buffer[0].client.tid;
@@ -182,10 +194,14 @@ void *sendResponse()
          buffer[i] = buffer[i + 1];
       }
       buff_num_elems--;
+      
+      //usleep(5*10000);
+      printf("BUF: %d\n",buff_num_elems);
 
       pthread_cond_signal(&buff_full);
+      pthread_mutex_unlock(&lock4);
 
-      pthread_mutex_unlock(&lock3);
+
 
       char server_fifo[256];
       snprintf(server_fifo, sizeof(server_fifo), "/tmp/%d.%ld", client_pid, client_tid);
@@ -205,6 +221,7 @@ void *sendResponse()
          if (response.tskres == -1)
          {
             log_msg(response.rid, response.pid, response.tid, response.tskload, response.tskres, "2LATE");
+            flag_two_late = 1;
             //printf("ELEMS: %d", buff_num_elems);
          }
          else
@@ -212,6 +229,17 @@ void *sendResponse()
             log_msg(response.rid, response.pid, response.tid, response.tskload, response.tskres, "TSKDN");
          }
       }
+
+      pthread_mutex_lock(&lock3);
+      while (buff_num_elems <= 0){
+         if(clock()-start < 0.3/CLOCKS_PER_SEC){
+            stop = 1;
+            break;
+         }
+         pthread_cond_wait(&buff_empty, &lock3);
+
+      }
+      pthread_mutex_unlock(&lock3);
 
       signal(SIGPIPE, SIG_IGN);
 

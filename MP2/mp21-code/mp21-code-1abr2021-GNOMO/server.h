@@ -11,6 +11,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <sys/time.h>
 
 int fd_client_public;
 int buff_size;
@@ -21,6 +22,7 @@ int max_time;
 pthread_mutex_t lock1;
 pthread_mutex_t lock2;
 pthread_mutex_t lock3;
+pthread_mutex_t lock4;
 pthread_cond_t buff_full;
 pthread_cond_t buff_empty;
 
@@ -43,6 +45,7 @@ struct messages
 
 struct messages *buffer;
 int buff_num_elems = 0;
+int flag_two_late = 0;
 
 void createProducer(struct message *msg);
 
