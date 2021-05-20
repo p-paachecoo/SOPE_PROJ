@@ -123,7 +123,16 @@ void *handleRequest(void *arg)
 {
    struct message *msg = (struct message *)arg;
 
-   int task_res = task(msg->tskload);
+   int task_res;
+
+   if (difftime(time(0), initial_time) >= max_time)
+   {
+      task_res = -1;
+   }
+   else
+   {
+      task_res = task(msg->tskload);
+   }
 
    struct message *response = &(struct message){
        .rid = msg->rid,
@@ -167,7 +176,7 @@ void *sendResponse()
 
       struct message response = buffer[0].server;
       int client_pid = buffer[0].client.pid;
-      long int client_tid = buffer[0].client.tid;
+      int64_t client_tid = buffer[0].client.tid;
 
       for (int i = 0; i < buff_num_elems - 1; i++)
       {
@@ -192,14 +201,12 @@ void *sendResponse()
          pthread_exit(NULL);
       }
 
-      if (difftime(time(0), initial_time) >= max_time)
+      pthread_mutex_lock(&lock1);
+      write(fd_server_private, &response, sizeof(response));
+      pthread_mutex_unlock(&lock1);
+
+      if (response.tskres == -1)
       {
-         response.tskres = -1;
-
-         pthread_mutex_lock(&lock1);
-         write(fd_server_private, &response, sizeof(response));
-         pthread_mutex_unlock(&lock1);
-
          log_msg(response.rid, response.pid, response.tid, response.tskload, response.tskres, "2LATE");
 
          signal(SIGPIPE, SIG_IGN);
@@ -209,10 +216,6 @@ void *sendResponse()
       }
       else
       {
-         pthread_mutex_lock(&lock1);
-         int bytes = write(fd_server_private, &response, sizeof(response));
-         pthread_mutex_unlock(&lock1);
-
          log_msg(response.rid, response.pid, response.tid, response.tskload, response.tskres, "TSKDN");
 
          signal(SIGPIPE, SIG_IGN);
