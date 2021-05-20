@@ -2,3 +2,5 @@
 /infer-out
 c
 s
+*.txt
+*.sh

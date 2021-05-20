@@ -1,4 +1,5 @@
 #include "server.h"
+#include "lib.h"
 
 //Main Thread -> S0
 int main(int argc, char *argv[])
@@ -16,9 +17,9 @@ int main(int argc, char *argv[])
       exit(1);
    }
 
-   if (argc == 5)
+   if (argc == 6)
    {
-      if ((buff_size = atoi(argv[3])) <= 0)
+      if ((buff_size = atoi(argv[4])) <= 0)
       {
          printf("[-l buffsz] must be greater than 0\n");
          exit(1);
@@ -31,7 +32,7 @@ int main(int argc, char *argv[])
       client_fifo_public = argv[3];
    }
 
-   buffer = malloc(buff_size * sizeof(message));
+   buffer = malloc(buff_size * sizeof(messages));
 
    max_time = atoi(argv[2]);
    initial_time = time(0);
@@ -52,15 +53,22 @@ int main(int argc, char *argv[])
       }
    } while (fd_client_public == -1 && difftime(time(0), initial_time) < max_time);
 
-   if (pthread_mutex_lock(&lock1) != 0)
+   if (pthread_mutex_init(&lock1, NULL) != 0)
    {
-      printf("\n mutex init lock1 failed\n");
+      printf("\n mutex init failed\n");
       return 1;
    }
-   else
+
+   if (pthread_mutex_init(&lock2, NULL) != 0)
    {
-      identifier_c += 1;
-      pthread_mutex_unlock(&lock1);
+      printf("\n mutex init failed\n");
+      return 1;
+   }
+
+   if (pthread_mutex_init(&lock3, NULL) != 0)
+   {
+      printf("\n mutex init failed\n");
+      return 1;
    }
 
    // Create consumer thread
@@ -69,14 +77,16 @@ int main(int argc, char *argv[])
    // Launch Cn producer threads
    while (difftime(time(0), initial_time) < max_time)
    {
-      struct message msg_received;
+      struct message *msg_received = malloc(sizeof(message));
 
-      if (read(fd_client_public, &msg_received, sizeof(message)) > 0)
+      if (read(fd_client_public, msg_received, sizeof(message)) > 0)
       {
-         log_msg(msg_received.rid, getpid(), pthread_self(), msg_received.tskload, msg_received.tskres, "RECVD");
+         log_msg(msg_received->rid, getpid(), pthread_self(), msg_received->tskload, msg_received->tskres, "RECVD");
          createProducer(msg_received);
       }
    }
+
+   free(buffer);
 
    close(fd_client_public);
    unlink(client_fifo_public);
@@ -84,12 +94,12 @@ int main(int argc, char *argv[])
    return 0;
 }
 
-void createProducer(struct message msg)
+void createProducer(struct message *msg)
 {
    int err;
    pthread_t id;
 
-   if ((err = pthread_create(&id, NULL, handleRequest, (void *)&msg)) != 0)
+   if ((err = pthread_create(&id, NULL, handleRequest, (void *)msg)) != 0)
    {
       fprintf(stderr, "S0 thread: %s!\n", strerror(err));
       exit(-1);
@@ -113,34 +123,34 @@ void *handleRequest(void *arg)
 {
    struct message *msg = (struct message *)arg;
 
-   //printf("%d\n", msg->rid);
-
-   time_t t;
-
-   unsigned int seed = (unsigned)(time(&t) + pthread_self() % 100);
-   srand(seed);
-   int task = rand_r(&seed) % 8 + 1; //1-9 inclusive
+   int task_res = task(msg->tskload);
 
    struct message *response = &(struct message){
        .rid = msg->rid,
-       .pid = msg->pid,
-       .tid = msg->tid,
-       .tskload = task,
-       .tskres = 1};
+       .pid = getpid(),
+       .tid = pthread_self(),
+       .tskload = msg->tskload,
+       .tskres = task_res};
 
-   pthread_mutex_lock(&lock1);
+   struct messages *client_server = &(struct messages){
+       .client = *msg,
+       .server = *response};
+
+   pthread_mutex_lock(&lock2);
 
    while (buff_num_elems >= buff_size)
-      pthread_cond_wait(&buff_full, &lock1);
+      pthread_cond_wait(&buff_full, &lock2);
 
-   buffer[buff_num_elems] = *response;
+   buffer[buff_num_elems] = *client_server;
    buff_num_elems++;
 
    pthread_cond_signal(&buff_empty);
 
-   pthread_mutex_unlock(&lock1);
+   pthread_mutex_unlock(&lock2);
 
    log_msg(response->rid, getpid(), pthread_self(), response->tskload, response->tskres, "TSKEX");
+
+   free(msg);
 
    pthread_exit(NULL);
 }
@@ -150,12 +160,14 @@ void *sendResponse()
 {
    while (1)
    {
-      pthread_mutex_lock(&lock1);
+      pthread_mutex_lock(&lock3);
 
       while (buff_num_elems <= 0)
-         pthread_cond_wait(&buff_empty, &lock1);
+         pthread_cond_wait(&buff_empty, &lock3);
 
-      struct message response = buffer[0];
+      struct message response = buffer[0].server;
+      int client_pid = buffer[0].client.pid;
+      long int client_tid = buffer[0].client.tid;
 
       for (int i = 0; i < buff_num_elems - 1; i++)
       {
@@ -165,15 +177,13 @@ void *sendResponse()
 
       pthread_cond_signal(&buff_full);
 
-      pthread_mutex_unlock(&lock1);
+      pthread_mutex_unlock(&lock3);
 
       char server_fifo[256];
-      snprintf(server_fifo, sizeof(server_fifo), "/tmp/%d.%ld", response.pid, response.tid);
-
-      //printf("%s\n", server_fifo);
+      snprintf(server_fifo, sizeof(server_fifo), "/tmp/%d.%ld", client_pid, client_tid);
 
       int fd_server_private;
-      fd_server_private = open(server_fifo, O_RDONLY | O_NONBLOCK);
+      fd_server_private = open(server_fifo, O_WRONLY | O_NONBLOCK);
 
       if (fd_server_private == -1)
       {
@@ -200,7 +210,7 @@ void *sendResponse()
       else
       {
          pthread_mutex_lock(&lock1);
-         write(fd_server_private, &response, sizeof(response));
+         int bytes = write(fd_server_private, &response, sizeof(response));
          pthread_mutex_unlock(&lock1);
 
          log_msg(response.rid, response.pid, response.tid, response.tskload, response.tskres, "TSKDN");

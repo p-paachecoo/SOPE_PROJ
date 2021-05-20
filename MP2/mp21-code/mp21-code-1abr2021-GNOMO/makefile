@@ -3,6 +3,9 @@ all: s c
 #s: server.o lib.o delay.c delay.h
 #	gcc -Wall  -o s delay.c lib.o server.o -pthread
 
+lib.o: lib.c lib.h delay.h
+	gcc -Wall -c -o lib.o lib.c
+
 s: server.c server.h lib.o delay.c delay.h
 	gcc -Wall -lm -o s delay.c lib.o server.c -pthread -lm
 

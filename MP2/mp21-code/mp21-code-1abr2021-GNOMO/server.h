@@ -19,6 +19,8 @@ int identifier_c = 1;
 time_t initial_time;
 int max_time;
 pthread_mutex_t lock1;
+pthread_mutex_t lock2;
+pthread_mutex_t lock3;
 pthread_cond_t buff_full;
 pthread_cond_t buff_empty;
 
@@ -33,10 +35,16 @@ struct message
     int tskres;    // task result
 } message;
 
-struct message *buffer;
+struct messages
+{
+    struct message client;
+    struct message server;
+} messages;
+
+struct messages *buffer;
 int buff_num_elems = 0;
 
-void createProducer(struct message msg);
+void createProducer(struct message *msg);
 
 void createConsumer();
 
