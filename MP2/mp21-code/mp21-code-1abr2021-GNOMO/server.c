@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
    createConsumer();
 
    // Launch Cn producer threads
-   while (difftime(time(0), initial_time) < max_time)
+   while (!closed)
    {
       struct message *msg_received = malloc(sizeof(message));
 
@@ -123,23 +123,22 @@ void *handleRequest(void *arg)
 {
    struct message *msg = (struct message *)arg;
 
-   int task_res;
-
-   if (difftime(time(0), initial_time) >= max_time)
-   {
-      task_res = -1;
-   }
-   else
-   {
-      task_res = task(msg->tskload);
-   }
-
    struct message *response = &(struct message){
        .rid = msg->rid,
        .pid = getpid(),
        .tid = pthread_self(),
        .tskload = msg->tskload,
-       .tskres = task_res};
+       .tskres = 0};
+
+   if (difftime(time(0), initial_time) >= max_time)
+   {
+      response->tskres = -1;
+   }
+   else
+   {
+      response->tskres = task(msg->tskload);
+      log_msg(response->rid, getpid(), pthread_self(), response->tskload, response->tskres, "TSKEX");
+   }
 
    struct messages *client_server = &(struct messages){
        .client = *msg,
@@ -157,8 +156,6 @@ void *handleRequest(void *arg)
 
    pthread_mutex_unlock(&lock2);
 
-   log_msg(response->rid, getpid(), pthread_self(), response->tskload, response->tskres, "TSKEX");
-
    free(msg);
 
    pthread_exit(NULL);
@@ -167,7 +164,7 @@ void *handleRequest(void *arg)
 //Consumer Thread -> Sc
 void *sendResponse()
 {
-   while (1)
+   while (difftime(time(0), initial_time) < max_time || buff_num_elems > 0)
    {
       pthread_mutex_lock(&lock3);
 
@@ -177,6 +174,8 @@ void *sendResponse()
       struct message response = buffer[0].server;
       int client_pid = buffer[0].client.pid;
       int64_t client_tid = buffer[0].client.tid;
+
+      log_msg(response.rid, response.pid, response.tid, response.tskload, response.tskres, "CHEGOU");
 
       for (int i = 0; i < buff_num_elems - 1; i++)
       {
@@ -197,6 +196,7 @@ void *sendResponse()
       if (fd_server_private == -1)
       {
          log_msg(response.rid, response.pid, response.tid, response.tskload, response.tskres, "FAILD");
+         closed = 1;
          close(fd_server_private);
          pthread_exit(NULL);
       }
@@ -208,20 +208,16 @@ void *sendResponse()
       if (response.tskres == -1)
       {
          log_msg(response.rid, response.pid, response.tid, response.tskload, response.tskres, "2LATE");
-
-         signal(SIGPIPE, SIG_IGN);
-
-         close(fd_server_private);
-         pthread_exit(NULL);
+         printf("ELEMS: %d", buff_num_elems);
       }
       else
       {
          log_msg(response.rid, response.pid, response.tid, response.tskload, response.tskres, "TSKDN");
-
-         signal(SIGPIPE, SIG_IGN);
-
-         close(fd_server_private);
       }
+
+      signal(SIGPIPE, SIG_IGN);
+
+      close(fd_server_private);
    }
 
    pthread_exit(NULL);

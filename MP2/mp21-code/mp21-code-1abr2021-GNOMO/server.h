@@ -14,7 +14,7 @@
 
 int fd_client_public;
 int buff_size;
-int identifier_c = 1;
+int closed = 0;
 
 time_t initial_time;
 int max_time;
