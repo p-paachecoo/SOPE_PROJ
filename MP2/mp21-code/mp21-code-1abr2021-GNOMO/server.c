@@ -111,12 +111,13 @@ int main(int argc, char *argv[])
    pthread_cond_signal(&buff_empty);
    //TODO Join with consumer
    pthread_join(id_consumer,NULL);
-   printf("Joined \n");
+   printf("Joined With Producer Thread \n");
 
    free(buffer);
 
    close(fd_client_public);
    unlink(client_fifo_public);
+   printf("Closed Public FIFO \n");
 
    return 0;
 }
@@ -201,7 +202,6 @@ void *sendResponse()
    while (difftime(time(0), initial_time) < max_time || number_producers > 0 || fifo_empty == 0) // Waits for all producers to finish
    {
       int num_prod = number_producers;
-      printf("Alive\n");
       pthread_mutex_lock(&lock3);
 
       int break_while = 0;
@@ -234,7 +234,6 @@ void *sendResponse()
 
       int fd_server_private;
       fd_server_private = open(server_fifo, O_WRONLY | O_NONBLOCK);
-      printf("Num Prod2: %d\n", number_producers);
       if (fd_server_private == -1)
       {
          if(sending_block == 0 || (difftime(time(0), initial_time) < max_time || num_prod > 0))
@@ -261,7 +260,7 @@ void *sendResponse()
 
       close(fd_server_private);
    }
-   printf("Consumer Died\n");
+   printf("Consumer Thread Closed\n");
    consumer_alive = 0;
 
    pthread_exit(NULL);
