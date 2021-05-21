@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
    createConsumer();
 
    // Launch Cn producer threads
-   while (difftime(time(0), initial_time) < max_time) //TODO
+   while (difftime(time(0), initial_time) < max_time)
    {
       struct message *msg_received = malloc(sizeof(message));
 
@@ -87,30 +87,33 @@ int main(int argc, char *argv[])
    }
 
    int stop = 0;
+
    //Time has passed
-   while (stop == 0) //TODO
+   while (stop == 0)
    {
       struct message *msg_received = malloc(sizeof(message));
 
-      if(consumer_alive == 0)
+      if (consumer_alive == 0)
          stop = 1;
       else if (read(fd_client_public, msg_received, sizeof(message)) > 0)
       {
-         if(consumer_alive == 0)
+         if (consumer_alive == 0)
             break;
          log_msg(msg_received->rid, getpid(), pthread_self(), msg_received->tskload, msg_received->tskres, "RECVD");
          createProducer(msg_received);
-      } else{
+      }
+      else
+      {
          fifo_empty = 1;
          stop = 1;
       }
-         
    }
    printf("Closed Producers \n");
    sending_block = 1;
    pthread_cond_signal(&buff_empty);
-   //TODO Join with consumer
-   pthread_join(id_consumer,NULL);
+
+   // Join with consumer
+   pthread_join(id_consumer, NULL);
    printf("Joined With Producer Thread \n");
 
    free(buffer);
@@ -204,16 +207,14 @@ void *sendResponse()
       int num_prod = number_producers;
       pthread_mutex_lock(&lock3);
 
-      int break_while = 0;
-      while (buff_num_elems <= 0){
+      while (buff_num_elems <= 0)
+      {
          pthread_cond_wait(&buff_empty, &lock3);
-         if(!(difftime(time(0), initial_time) < max_time || number_producers > 0 || fifo_empty == 0)){
-            break_while = 1;
+         if (!(difftime(time(0), initial_time) < max_time || number_producers > 0 || fifo_empty == 0))
+         {
             break;
          }
       }
-      // if(break_while == 1)
-      //    break;
 
       struct message response = buffer[0].server;
       int client_pid = buffer[0].client.pid;
@@ -236,7 +237,7 @@ void *sendResponse()
       fd_server_private = open(server_fifo, O_WRONLY | O_NONBLOCK);
       if (fd_server_private == -1)
       {
-         if(sending_block == 0 || (difftime(time(0), initial_time) < max_time || num_prod > 0))
+         if (sending_block == 0 || (difftime(time(0), initial_time) < max_time || num_prod > 0))
             log_msg(response.rid, response.pid, response.tid, response.tskload, response.tskres, "FAILD");
       }
       else
