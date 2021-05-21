@@ -1,4 +1,4 @@
-#include "client.h"
+#include "client_nosso.h"
 
 int main(int argc, char *argv[])
 {
@@ -139,7 +139,7 @@ void *makeRequest()
       if (msg_received.tskres == -1)
       {
          log_msg(msg->rid, getpid(), pthread_self(), msg_received.tskload, msg_received.tskres, "CLOSD");
-         //server_closed = 1;
+         server_closed = 1;
       }
       else
          log_msg(msg->rid, getpid(), pthread_self(), msg_received.tskload, msg_received.tskres, "GOTRS");
