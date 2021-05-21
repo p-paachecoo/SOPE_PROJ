@@ -125,7 +125,7 @@ void createProducer(struct message *msg)
 
    if ((err = pthread_create(&id, NULL, handleRequest, (void *)msg)) != 0)
    {
-      fprintf(stderr, "S1 thread: %s!\n", strerror(err));
+      fprintf(stderr, "S0 thread: %s!\n", strerror(err));
       exit(-1);
    }
 }
@@ -209,8 +209,6 @@ void *sendResponse()
       int client_pid = buffer[0].client.pid;
       int64_t client_tid = buffer[0].client.tid;
 
-      //log_msg(response.rid, response.pid, response.tid, response.tskload, response.tskres, "CHEGOU");
-
       for (int i = 0; i < buff_num_elems - 1; i++)
       {
          buffer[i] = buffer[i + 1];
@@ -230,8 +228,10 @@ void *sendResponse()
       if (fd_server_private == -1)
       {
          log_msg(response.rid, response.pid, response.tid, response.tskload, response.tskres, "FAILD");
-      } else {
-         fprintf(stderr,"[server] opened client fifo %s\n",server_fifo);
+      }
+      else
+      {
+         fprintf(stderr, "[server] opened client fifo %s\n", server_fifo);
          pthread_mutex_lock(&lock1);
          write(fd_server_private, &response, sizeof(response));
          pthread_mutex_unlock(&lock1);
@@ -239,7 +239,6 @@ void *sendResponse()
          if (response.tskres == -1)
          {
             log_msg(response.rid, response.pid, response.tid, response.tskload, response.tskres, "2LATE");
-            //printf("ELEMS: %d", buff_num_elems);
          }
          else
          {
