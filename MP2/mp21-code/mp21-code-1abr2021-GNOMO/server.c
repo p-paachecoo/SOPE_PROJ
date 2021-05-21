@@ -100,8 +100,11 @@ int main(int argc, char *argv[])
             break;
          log_msg(msg_received->rid, getpid(), pthread_self(), msg_received->tskload, msg_received->tskres, "RECVD");
          createProducer(msg_received);
-      } else
+      } else{
+         fifo_empty = 1;
          stop = 1;
+      }
+         
    }
    printf("Closed Producers \n");
    sending_block = 1;
@@ -195,7 +198,7 @@ void *handleRequest(void *arg)
 void *sendResponse()
 {
    consumer_alive = 1;
-   while (difftime(time(0), initial_time) < max_time || number_producers > 0) // Waits for all producers to finish
+   while (difftime(time(0), initial_time) < max_time || number_producers > 0 || fifo_empty == 0) // Waits for all producers to finish
    {
       int num_prod = number_producers;
       printf("Alive\n");
@@ -204,7 +207,7 @@ void *sendResponse()
       int break_while = 0;
       while (buff_num_elems <= 0){
          pthread_cond_wait(&buff_empty, &lock3);
-         if(!(difftime(time(0), initial_time) < max_time || number_producers > 0)){
+         if(!(difftime(time(0), initial_time) < max_time || number_producers > 0 || fifo_empty == 0)){
             break_while = 1;
             break;
          }

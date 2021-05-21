@@ -18,6 +18,7 @@ int number_producers = 0;
 pthread_t id_consumer;
 int consumer_alive = 0;
 int sending_block = 0;
+int fifo_empty = 0;
 
 time_t initial_time;
 int max_time;
