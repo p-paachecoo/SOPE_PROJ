@@ -9,7 +9,7 @@ lib.o: lib.c lib.h delay.h
 s: server.c server.h lib.o delay.c delay.h
 	gcc -Wall -lm -o s delay.c lib.o server.c -pthread -lm
 
-c: client.c client.h
+c: client.c common.h
 	gcc -Wall -lm -o c client.c -pthread -lm
 
 # server.o: server.c
