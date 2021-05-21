@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
    createConsumer();
 
    // Launch Cn producer threads
-   while (difftime(time(0), initial_time) < 2*max_time) //TODO
+   while (difftime(time(0), initial_time) < max_time) //TODO
    {
       struct message *msg_received = malloc(sizeof(message));
 
@@ -85,6 +85,29 @@ int main(int argc, char *argv[])
          createProducer(msg_received);
       }
    }
+
+   int stop = 0;
+   //Time has passed
+   while (stop == 0) //TODO
+   {
+      struct message *msg_received = malloc(sizeof(message));
+
+      if(consumer_alive == 0)
+         stop = 1;
+      else if (read(fd_client_public, msg_received, sizeof(message)) > 0)
+      {
+         if(consumer_alive == 0)
+            break;
+         log_msg(msg_received->rid, getpid(), pthread_self(), msg_received->tskload, msg_received->tskres, "RECVD");
+         createProducer(msg_received);
+      } else
+         stop = 1;
+   }
+   printf("Closed Producers \n");
+
+   //TODO Join with consumer
+   pthread_join(id_consumer,NULL);
+   printf("Joined \n");
 
    free(buffer);
 
@@ -109,9 +132,8 @@ void createProducer(struct message *msg)
 void createConsumer()
 {
    int err;
-   pthread_t id;
 
-   if ((err = pthread_create(&id, NULL, sendResponse, NULL)) != 0)
+   if ((err = pthread_create(&id_consumer, NULL, sendResponse, NULL)) != 0)
    {
       fprintf(stderr, "S0 thread: %s!\n", strerror(err));
       exit(-1);
@@ -121,6 +143,7 @@ void createConsumer()
 //Producer Threads -> Sn
 void *handleRequest(void *arg)
 {
+   number_producers++;
    struct message *msg = (struct message *)arg;
 
    struct message *response = &(struct message){
@@ -156,15 +179,16 @@ void *handleRequest(void *arg)
 
    pthread_mutex_unlock(&lock2);
 
+   number_producers--;
    free(msg);
-
    pthread_exit(NULL);
 }
 
 //Consumer Thread -> Sc
 void *sendResponse()
 {
-   while (difftime(time(0), initial_time) < 2*max_time)
+   consumer_alive = 1;
+   while (difftime(time(0), initial_time) < max_time || number_producers > 0) // Waits for all producers to finish
    {
       pthread_mutex_lock(&lock3);
 
@@ -217,6 +241,8 @@ void *sendResponse()
 
       close(fd_server_private);
    }
+   printf("Consumer Died\n");
+   consumer_alive = 0;
 
    pthread_exit(NULL);
 }

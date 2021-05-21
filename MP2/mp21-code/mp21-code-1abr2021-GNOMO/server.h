@@ -15,6 +15,10 @@
 int fd_client_public;
 int buff_size;
 int closed = 0;
+//ADD mutex v
+int number_producers = 0;
+pthread_t id_consumer;
+int consumer_alive = 0;
 
 time_t initial_time;
 int max_time;
