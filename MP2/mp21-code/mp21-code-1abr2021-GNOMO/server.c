@@ -90,6 +90,7 @@ int main(int argc, char *argv[])
    //Time has passed
    while (stop == 0) //TODO
    {
+      printf("Num Prod: %d\n", number_producers);
       struct message *msg_received = malloc(sizeof(message));
 
       if(consumer_alive == 0)
@@ -104,7 +105,7 @@ int main(int argc, char *argv[])
          stop = 1;
    }
    printf("Closed Producers \n");
-
+   pthread_cond_signal(&buff_empty);
    //TODO Join with consumer
    pthread_join(id_consumer,NULL);
    printf("Joined \n");
@@ -190,10 +191,19 @@ void *sendResponse()
    consumer_alive = 1;
    while (difftime(time(0), initial_time) < max_time || number_producers > 0) // Waits for all producers to finish
    {
+      printf("Alive\n");
       pthread_mutex_lock(&lock3);
 
-      while (buff_num_elems <= 0)
+      int break_while = 0;
+      while (buff_num_elems <= 0){
          pthread_cond_wait(&buff_empty, &lock3);
+         if(!(difftime(time(0), initial_time) < max_time || number_producers > 0)){
+            break_while = 1;
+            break;
+         }
+      }
+      if(break_while == 1)
+         break;
 
       struct message response = buffer[0].server;
       int client_pid = buffer[0].client.pid;
