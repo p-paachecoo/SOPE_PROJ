@@ -202,8 +202,8 @@ void *sendResponse()
             break;
          }
       }
-      if(break_while == 1)
-         break;
+      // if(break_while == 1)
+      //    break;
 
       struct message response = buffer[0].server;
       int client_pid = buffer[0].client.pid;
@@ -227,7 +227,8 @@ void *sendResponse()
 
       if (fd_server_private == -1)
       {
-         log_msg(response.rid, response.pid, response.tid, response.tskload, response.tskres, "FAILD");
+         if(break_while == 0)
+            log_msg(response.rid, response.pid, response.tid, response.tskload, response.tskres, "FAILD");
       }
       else
       {
