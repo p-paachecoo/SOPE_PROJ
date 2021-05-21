@@ -14,17 +14,17 @@
 
 int fd_client_public;
 int buff_size;
-int closed = 0;
-//ADD mutex v
 int number_producers = 0;
 pthread_t id_consumer;
 int consumer_alive = 0;
+int sending_block = 0;
 
 time_t initial_time;
 int max_time;
 pthread_mutex_t lock1;
 pthread_mutex_t lock2;
 pthread_mutex_t lock3;
+pthread_mutex_t lock4;
 pthread_cond_t buff_full;
 pthread_cond_t buff_empty;
 

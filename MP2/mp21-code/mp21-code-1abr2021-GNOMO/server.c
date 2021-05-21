@@ -90,7 +90,6 @@ int main(int argc, char *argv[])
    //Time has passed
    while (stop == 0) //TODO
    {
-      printf("Num Prod: %d\n", number_producers);
       struct message *msg_received = malloc(sizeof(message));
 
       if(consumer_alive == 0)
@@ -105,6 +104,7 @@ int main(int argc, char *argv[])
          stop = 1;
    }
    printf("Closed Producers \n");
+   sending_block = 1;
    pthread_cond_signal(&buff_empty);
    //TODO Join with consumer
    pthread_join(id_consumer,NULL);
@@ -144,7 +144,10 @@ void createConsumer()
 //Producer Threads -> Sn
 void *handleRequest(void *arg)
 {
+   pthread_mutex_lock(&lock4);
    number_producers++;
+   pthread_mutex_unlock(&lock4);
+
    struct message *msg = (struct message *)arg;
 
    struct message *response = &(struct message){
@@ -180,7 +183,10 @@ void *handleRequest(void *arg)
 
    pthread_mutex_unlock(&lock2);
 
+   pthread_mutex_lock(&lock4);
    number_producers--;
+   pthread_mutex_unlock(&lock4);
+
    free(msg);
    pthread_exit(NULL);
 }
@@ -191,6 +197,7 @@ void *sendResponse()
    consumer_alive = 1;
    while (difftime(time(0), initial_time) < max_time || number_producers > 0) // Waits for all producers to finish
    {
+      int num_prod = number_producers;
       printf("Alive\n");
       pthread_mutex_lock(&lock3);
 
@@ -224,10 +231,10 @@ void *sendResponse()
 
       int fd_server_private;
       fd_server_private = open(server_fifo, O_WRONLY | O_NONBLOCK);
-
+      printf("Num Prod2: %d\n", number_producers);
       if (fd_server_private == -1)
       {
-         if(break_while == 0)
+         if(sending_block == 0 || (difftime(time(0), initial_time) < max_time || num_prod > 0))
             log_msg(response.rid, response.pid, response.tid, response.tskload, response.tskres, "FAILD");
       }
       else
